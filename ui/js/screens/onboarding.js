@@ -1,7 +1,7 @@
 // Onboarding wizard: Claude, resumes, goals, plan, LinkedIn, schedule. Shown instead of the app until onboarded.
 import { S, app } from "../state.js";
 import * as api from "../api.js";
-import { bindDrop } from "./resumes.js";
+import { bindDrop } from "../components/drop.js";
 import { targetRows, readTargets } from "./settings.js";
 import { $, esc, md, toast, lines } from "../util.js";
 
@@ -53,7 +53,11 @@ export function renderOnboarding() {
         <div class="hint">Every job uses a few Claude calls (picking, scoring, tailoring, answering) from your plan.</div></div>
     </div></div>${nav(true, "Finish and start")}`;
   $("#view").innerHTML = `<div class="wizard">${steps}${body}</div>`;
-  if (st === 1) bindDrop();
+  if (st === 1) bindDrop($("#drop"), $("#file"), async (files) => {
+    S.STATE.resumes = await api.uploadResumes(files);
+    toast(`Added ${files.length} file${files.length > 1 ? "s" : ""}`);
+    app.render();
+  });
 }
 export async function obNext() {
   const st = OB.step;

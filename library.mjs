@@ -9,8 +9,13 @@ import { renderResumePdf } from "./resume_pdf.mjs";
 import { computeStats, loadRecords, loadAudit } from "./market.mjs";
 
 export const LIB_DIR = path.join(DATA, "library");
-const slug = (s) => String(s).toLowerCase().normalize("NFKD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
+export const slug = (s) => String(s).toLowerCase().normalize("NFKD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
 const ascii = (s) => String(s || "").normalize("NFKD").replace(/\p{M}/gu, "").replace(/ı/g, "i").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "");
+// Versions of a ready resume, oldest first (the last is current); older entries have only v1
+export const readyVersions = (e) => e.versions?.length ? e.versions
+  : [{ v: 1, by: "claude", file: e.file, path: e.path, at: e.generatedAt, note: `Written for ${e.field}` }];
+// Original metadata written by the Resumes screen (resumes.mjs)
+const loadMeta = () => { try { return JSON.parse(fs.readFileSync(path.join(DATA, "resumes.json"), "utf8")); } catch { return {}; } };
 const mtime = (f) => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } };
 
 export function libraryEntries() {
@@ -49,17 +54,31 @@ export async function buildLibrary(githubBrief = "", log = console.log) {
       `Most often missing: ${seg.topMissing.map((k) => `${k.keyword} (${k.count}x)`).join(", ") || "n/a"}`,
       `Most often matched: ${seg.topMatched.map((k) => `${k.keyword} (${k.count}x)`).join(", ") || "n/a"}`,
     ].join("\n") : "";
-    const { resume, usage } = await libraryResume({ field, requirements, github: githubBrief });
+    // The original the user set as the default for this field (Resumes screen, data/resumes.json)
+    const def = Object.entries(loadMeta()).find(([f, m]) => m.defaultFor?.includes(field.field) && fs.existsSync(path.join(DIR, "resumes", f)))?.[0];
+    const hint = def ? `\nThe candidate set ${def} as the default resume for this field: start from it.` : "";
+    const { resume, usage } = await libraryResume({ field, requirements: requirements + hint, github: githubBrief });
     const dir = path.join(LIB_DIR, slug(field.field));
     const file = `${ascii(resume.name)}_${ascii(field.field)}_CV.pdf`;
-    // keep the previous version for comparison
+    // keep the previous version for comparison, and its PDF in versions/ so the history still opens it
     const prevMeta = path.join(dir, "meta.json");
-    if (fs.existsSync(prevMeta)) fs.copyFileSync(prevMeta, path.join(dir, "meta.previous.json"));
+    const prev = fs.existsSync(prevMeta) ? JSON.parse(fs.readFileSync(prevMeta, "utf8")) : null;
+    if (prev) fs.copyFileSync(prevMeta, path.join(dir, "meta.previous.json"));
+    const versions = prev ? readyVersions(prev).map((v) => ({ ...v })) : [];
+    for (const v of versions) {
+      const p = path.join(DIR, v.path);
+      if (path.dirname(p) === dir && fs.existsSync(p)) {
+        const moved = path.join(dir, "versions", `v${v.v}-${path.basename(p)}`);
+        fs.mkdirSync(path.dirname(moved), { recursive: true }); fs.renameSync(p, moved);
+        v.path = path.relative(DIR, moved).replace(/\\/g, "/");
+      }
+    }
     const out = await renderResumePdf(resume, path.join(dir, file));
     const meta = {
       field: field.field, file, path: path.relative(DIR, out).replace(/\\/g, "/"), generatedAt: new Date().toISOString(),
       basedOnJobs: seg?.jobs || 0, resume, usage: { costUsd: usage?.costUsd || 0 },
     };
+    if (versions.length) meta.versions = [...versions, { v: versions.at(-1).v + 1, by: "claude", file, path: meta.path, at: meta.generatedAt, note: `Rewritten for ${field.field}` }];
     fs.writeFileSync(path.join(dir, "meta.json"), JSON.stringify(meta, null, 2));
     built.push(meta);
   }

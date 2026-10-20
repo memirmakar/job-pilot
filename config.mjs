@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { migrateAnswers, answersText } from "./answers.mjs";
 
 export const DIR = path.dirname(fileURLToPath(import.meta.url));
 export const DATA = path.join(DIR, "data");
@@ -37,7 +38,8 @@ export const DEFAULT_SETTINGS = {
 const readJson = (f, fb) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return fb; } };
 
 export function loadSettings() { return { ...DEFAULT_SETTINGS, ...readJson(SETTINGS_FILE, {}) }; }
-export function loadProfile() { return readJson(PROFILE_FILE, null); }
+// Standard answers move out of facts the first time the profile is read (answers.mjs)
+export function loadProfile() { const p = readJson(PROFILE_FILE, null); if (migrateAnswers(p)) saveProfile(p); return p; }
 export function isOnboarded() { return !!loadProfile()?.onboardedAt; }
 
 export function saveSettings(patch) {
@@ -73,7 +75,7 @@ export function loadConfig() {
     companyExclude: p.companyExclude || [],
     preferences: [p.preferences || p.goalsText || "", p.seniority ? `Seniority: ${p.seniority}.` : "",
       p.workplace?.length ? `Workplace: ${p.workplace.join(", ")}.` : "", p.locations?.length ? `Locations: ${p.locations.join("; ")}.` : ""].filter(Boolean).join(" "),
-    profile: p.facts || "",
+    profile: [answersText(p), p.facts].filter(Boolean).join("\n\n"),
     maxRunMinutes: s.maxRunMinutes,
     marketReview: { everyDays: s.marketEveryDays, minNewJobs: 10 },
     llm: { model: s.modelDaily, modelWeekly: s.modelWeekly, effort: s.effort, claudePath: s.claudePath, resumesDir: "resumes", minAtsScore: s.minAtsScore },

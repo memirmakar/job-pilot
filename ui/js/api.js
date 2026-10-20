@@ -19,6 +19,7 @@ export const getGithub = () => read("/api/github");             // { user, fetch
 export const getLibrary = () => read("/api/library");           // { entries, due }
 export const getDoctor = () => read("/api/doctor");             // doctor reports
 export const getRuns = () => read("/api/runs");                 // last 30 finished runs (no events)
+export const getResumes = () => read("/api/resumes/all");        // { originals, ready, tailored, answers, fields }
 export const getConversation = (site, id) => call(`/api/conversation?site=${encodeURIComponent(site)}&id=${encodeURIComponent(id)}`); // { messages[] }
 
 // ----- Ask Claude about a job -----
@@ -34,6 +35,17 @@ export const restoreDoctor = (id) => call("/api/doctor/restore", { id });
 // ----- data changes -----
 export const uploadResumes = (files) => call("/api/resumes", { files }); // [{ name, data (base64) }]
 export const removeResume = (file) => call("/api/resumes/delete", { file });
+// ----- Resumes screen -----
+export const stageResumes = (files) => call("/api/resumes", { files, stage: true }); // staged until addOriginal: [{ token, file, size }]
+export const readOriginal = (token) => call("/api/resumes/read", { token });        // Claude reads it: { read{ roles skills languages … }, language }
+export const readExisting = (file) => call("/api/resumes/read-existing", { file });  // Claude reads an original in resumes/ (before Export to edit)
+export const addOriginal = (b) => call("/api/resumes/add", b);                       // { token, name, language, fields, defaultFor, replaces? }
+export const discardUpload = (token) => call("/api/resumes/discard", { token });
+export const setResumeMeta = (b) => call("/api/resumes/meta", b);                    // { file, name?, language?, fields?, defaultFor? }
+export const checkReupload = (b) => call("/api/resumes/check", b);                   // { id, name, data }: Claude's check + new score
+export const useReupload = (b) => call("/api/resumes/use", b);                       // { token, remove[], confirm[] }
+export const saveAnswers = (answers) => call("/api/answers", { answers });           // { key: { tr, en } }
+export const docxUrl = (id) => "/api/resumes/docx?id=" + encodeURIComponent(id);
 export const saveProfile = (patch) => call("/api/profile", patch);
 export const saveSettings = (patch) => call("/api/settings", patch);
 export const setTodo = (title, done) => call("/api/todo", { title, done });

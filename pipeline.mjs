@@ -113,6 +113,8 @@ async function easyApply(page, rec, files, { dryRun, easyBtn }) {
       const done = btn(page, LI.done);
       if (await exists(done)) await done.click().catch(() => {}); else await btn(page, LI.dismiss).click().catch(() => {});
       rec.submittedAt = new Date().toISOString();
+      // The Resumes screen shows this version as sent and read-only
+      if (rec.tailored?.uploaded) rec.tailored.sent = { v: rec.tailored.versions?.at(-1)?.v || 1, at: rec.submittedAt, company: rec.company };
       S.count("applied");
       return S.finish(rec, "applied");
     }

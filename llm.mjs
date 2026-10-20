@@ -167,7 +167,7 @@ export async function scoreResumes(job, files = loadResumes(), github = "") {
 }
 
 // ---------- resume tailoring ----------
-const ResumeSchema = {
+export const ResumeSchema = {
   type: "object", additionalProperties: false,
   required: ["language", "name", "headline", "contact", "summary", "sections", "skills", "github_added", "changes", "not_added"],
   properties: {
@@ -278,6 +278,7 @@ export async function answerQuestions({ job, resumeFile, resumePath = null, fiel
   const system = `You fill in job application forms for a candidate. Your goal is to maximize the chance of getting an interview.
 
 Rules:
+- The candidate's standard answers (in the profile) come first: when a question matches one, use it, in the question's language, fitted to the field's options and format.
 - Facts about experience, skills, tools, education, certifications and legal status must come from the resume or the candidate profile. Don't claim a skill, degree or certification that isn't there. For "years of experience with X", count from the resume; if X is closely related to something the candidate did, credit that time.
 - Preference and negotiable questions (salary expectation, notice period, start date, relocation, travel, shifts, remote/onsite, willingness to learn) are your call: pick the answer most likely to get an interview. For salary, give a competitive, realistic figure for this role, seniority and location (in the currency and convention the form or job location implies, e.g. monthly net or yearly gross) that won't screen the candidate out. Follow any hints in the candidate profile.
 - For select, radio and checkbox fields, the value must be exactly one of the listed options.

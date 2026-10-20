@@ -8,6 +8,7 @@ import { setChoice, isDark } from "./theme.js";
 import { renderSettings, targetRows, readTargets } from "./screens/settings.js";
 import { renderOnboarding, obNext, OB } from "./screens/onboarding.js";
 import { JOB_ACTIONS, bindJobs } from "./screens/jobs/index.js";
+import { RES_ACTIONS, bindResumes } from "./screens/resumes/index.js";
 
 const ACTIONS = {
   run: async () => { await api.startRun({}); toast("Run started. You'll see an Edge window working; leave it open."); await loadState(); },
@@ -54,10 +55,13 @@ const ACTIONS = {
   "theme-system": () => { setChoice(null); renderMenu(); },
   // jobs screen
   ...JOB_ACTIONS,
+  // resumes screen
+  ...RES_ACTIONS,
 };
 
 export function bindEvents() {
   bindJobs();
+  bindResumes();
   document.addEventListener("click", async (e) => {
     if (!e.target.closest(".menu-wrap")) toggleMenu(false);
     const act = e.target.closest("[data-action]");

@@ -5,6 +5,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, execFile } from "node:child_process";
 import { DIR, DATA, loadSettings, loadProfile, saveSettings, saveProfile, isOnboarded, DEFAULT_SETTINGS } from "./config.mjs";
+import { resumeRoutes } from "./resume_routes.mjs";
+import { stage } from "./reupload.mjs";
+import { archiveOriginal } from "./resumes.mjs";
 
 const PORT = Number(process.env.PORT) || 4510;
 const RECORDS_DIR = path.join(DATA, "applications");
@@ -150,7 +153,7 @@ const routes = {
   }).filter(Boolean)),
   "GET /pdf": (req, res, url) => {
     const file = path.resolve(DIR, url.searchParams.get("p") || "");
-    const allowed = ["resumes", path.join("data", "tailored"), path.join("data", "library")].map((d) => path.join(DIR, d) + path.sep);
+    const allowed = ["resumes", ...["tailored", "library", "resumes_history", "staging"].map((d) => path.join("data", d))].map((d) => path.join(DIR, d) + path.sep);
     if (!file.toLowerCase().endsWith(".pdf") || !allowed.some((a) => file.startsWith(a)) || !fs.existsSync(file)) return send(res, 404, "text/plain", "Not found");
     res.writeHead(200, { "Content-Type": "application/pdf", "Content-Disposition": `${url.searchParams.has("dl") ? "attachment" : "inline"}; filename="${path.basename(file)}"` });
     res.end(fs.readFileSync(file));
@@ -158,10 +161,13 @@ const routes = {
 
   // ----- onboarding -----
   "POST /api/resumes": async (req, res) => {
-    const { files = [] } = await body(req);
+    const { files = [], stage: staged } = await body(req);
+    // stage: kept in data/staging until the Resumes screen's "Add original"
+    if (staged) { try { return json(res, files.map((f) => stage(f.name, f.data))); } catch (e) { return json(res, { error: e.message }, 400); } }
     for (const f of files) {
       const name = path.basename(String(f.name)).replace(/[<>:"/\\|?*]/g, "_");
       if (!/\.(pdf|txt|md)$/i.test(name)) continue;
+      archiveOriginal(name); // a same-name upload is a new version: the old file goes to the history first
       fs.writeFileSync(path.join(DIR, "resumes", name), Buffer.from(f.data, "base64"));
     }
     json(res, resumes());
@@ -271,6 +277,8 @@ const routes = {
   },
   "POST /api/quit":(req, res) => { json(res, { ok: true }); setTimeout(() => process.exit(0), 300); },
 };
+
+Object.assign(routes, resumeRoutes({ body, json }));
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
