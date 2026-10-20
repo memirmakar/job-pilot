@@ -50,6 +50,11 @@ export const saveProfile = (patch) => call("/api/profile", patch);
 export const saveSettings = (patch) => call("/api/settings", patch);
 export const setTodo = (title, done) => call("/api/todo", { title, done });
 export const setArchived = (site, id, archived) => call("/api/archive", { site, id, archived });
+// ----- job statuses (status_routes.mjs) -----
+export const setJobStatus = (site, id, status, date = null) => call("/api/status", { site, id, status, date }); // interview | offer | rejected | applied
+export const approveJob = (site, id, answers) => call("/api/approve", { site, id, answers });                  // answers: [{ label, value }]
+export const skipJob = (site, id) => call("/api/skip", { site, id });
+export const sendNow = (site, id) => call("/api/send", { site, id });                                          // a real single-job run that submits
 
 // ----- onboarding and accounts -----
 export const planSearch = (answers) => call("/api/onboarding/plan", answers);

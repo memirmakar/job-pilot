@@ -7,6 +7,8 @@ import { pill } from "./components/status-pill.js";
 import { callout } from "./components/card.js";
 import { openSheet } from "./components/sheet.js";
 import { isDark, getChoice } from "./theme.js";
+import { runProblem, waitingCount } from "./screens/jobs/track.js";
+import { time, shortDay } from "./screens/jobs/model.js";
 
 export function renderNav() {
   const onboarding = S.view === "onboarding";
@@ -34,13 +36,23 @@ export function toggleMenu(open = $("#more-menu").hidden) {
   if (open) $("#more-menu").querySelector("[data-nav]")?.focus();
 }
 
-// Something that needs the user, shown in the bar instead of the schedule (existing data only)
+// Something that needs the user, shown in the bar instead of the schedule: [tone, pill, text]
+const day = (iso) => `${shortDay(iso) === "Today" ? "today" : shortDay(iso)} ${time(iso)}`;
 function barProblem() {
-  const c = S.STATE.claude, last = S.RUNS?.[0];
+  const c = S.STATE.claude;
   if (c && !c.found) return ["danger", "Claude not found", "Set its path in Settings"];
   if (c?.loggedIn === false) return ["danger", "Signed out of Claude", "Sign in from Settings"];
-  if (last?.outcome?.stop && /LinkedIn/.test(last.outcome.stop)) return ["danger", "Logged out", "of LinkedIn · last run stopped"];
+  const p = runProblem(), n = p?.run?.outcome?.analyzed ?? p?.run?.counts?.analyzed ?? 0;
+  if (p?.kind === "loggedOut") return ["danger", "Logged out", n ? `of LinkedIn · run stopped after ${n} jobs` : "of LinkedIn · the last run didn't start"];
+  if (p?.kind === "runFailed") return ["danger", "Run stopped", `at ${time(p.at)}${n ? ` after ${n} ${n === 1 ? "job" : "jobs"}` : ""}`];
+  if (p?.kind === "limited") return ["warning", "Paused", `LinkedIn limit${p.resumeAt ? ` · next try ${day(p.resumeAt)}` : ""}`];
+  if (p?.kind === "firstDay") return ["neutral", "Not run yet", S.STATE.schedule?.exists ? `First run ${fmtDate(S.STATE.schedule.next)}` : "Press Run now to start"];
   return null;
+}
+// " · 2 waiting for your OK", a link to them on Jobs
+function waitingHint() {
+  const n = waitingCount();
+  return n ? ` · <a href="#jobs" class="bar-link" data-action="show-waiting"><span class="jp-num">${n}</span> waiting for your OK</a>` : "";
 }
 
 export function renderStatus() {
@@ -58,10 +70,10 @@ export function renderStatus() {
     text = `Working: ${esc(busy.join(", "))}`;
   } else if (problem) {
     lead = pill(problem[1], problem[0]);
-    text = esc(problem[2]);
+    text = esc(problem[2]) + waitingHint();
   } else {
     lead = icon("clock");
-    text = st.schedule?.exists ? `Next run <span class="jp-num" style="color:var(--text)">${esc(fmtDate(st.schedule.next))}</span>` : "Not scheduled";
+    text = (st.schedule?.exists ? `Next run <span class="jp-num" style="color:var(--text)">${esc(fmtDate(st.schedule.next))}</span>` : "Not scheduled") + waitingHint();
   }
   const plain = text.replace(/<[^>]+>/g, "");
   bar.innerHTML = `${lead}<span class="txt ellip" title="${esc(plain)}">${text}</span>

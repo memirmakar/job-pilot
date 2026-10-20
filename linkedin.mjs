@@ -6,6 +6,8 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { DIR } from "./config.mjs";
 import config from "./config.mjs";
+import { guard, LinkedInLoginError, LinkedInLimitError } from "./linkedin_guard.mjs";
+export { LinkedInLoginError, LinkedInLimitError };
 
 export const PROFILE_DIR = path.join(DIR, "browser_profile");
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -57,9 +59,9 @@ export async function collectListings(page, keyword, location) {
   for (let p = 0; p < config.pagesPerSearch; p++) {
     const url = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(keyword)}` +
       `${location ? `&location=${encodeURIComponent(location)}` : ""}&f_TPR=${config.linkedinPostedWithin}&start=${p * 25}`;
-    await page.goto(url, { waitUntil: "domcontentloaded" });
+    const res = await page.goto(url, { waitUntil: "domcontentloaded" });
     await sleep(4500);
-    if (/\/login|\/authwall|\/checkpoint/.test(page.url())) throw new LinkedInLoginError("Not logged in to LinkedIn");
+    await guard(page, res, { banner: true });
     // Scroll the results list so lazy cards render
     await page.evaluate(async () => {
       const list = [...document.querySelectorAll("[data-occludable-job-id]")].at(-1)?.closest("ul")?.parentElement;
@@ -91,7 +93,6 @@ export async function collectListings(page, keyword, location) {
   }
   return [...found.values()];
 }
-export class LinkedInLoginError extends Error {}
 
 // ---------- job page ----------
 // "3 days ago" / "3 gün önce" / "Reposted 2 weeks ago" -> ISO date (approximate)
@@ -105,9 +106,9 @@ export function parsePosted(text) {
 
 export async function readJobPage(page, id) {
   const url = `https://www.linkedin.com/jobs/view/${id}/`;
-  await page.goto(url, { waitUntil: "domcontentloaded" });
+  const res = await page.goto(url, { waitUntil: "domcontentloaded" });
   await sleep(3500);
-  if (/\/login|\/authwall|\/checkpoint/.test(page.url())) throw new LinkedInLoginError("Not logged in to LinkedIn");
+  await guard(page, res);
   // The tab title is "Title | Company | LinkedIn"; the page has no stable title element
   const parts = (await page.title()).replace(/^\(\d+\)\s*/, "").split(" | ");
   const title = parts.length >= 3 ? parts[0].trim() : "";

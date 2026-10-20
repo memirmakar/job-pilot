@@ -7,6 +7,9 @@ import { detailHtml } from "./detail.js";
 import { postingHtml } from "./posting.js";
 import { askHtml, openAsk, sendAsk } from "./ask.js";
 import { keyOf } from "./model.js";
+import { REVIEW_ACTIONS } from "./review.js";
+import { runProblem } from "./track.js";
+import { firstDayHtml } from "./problems.js";
 
 const selectedJob = () => S.DATA.find((r) => keyOf(r) === S.selected);
 const visible = () => visibleGroups().flatMap((g) => g.jobs);
@@ -31,10 +34,11 @@ export function renderJobs() {
   if (!rows.some((r) => keyOf(r) === S.selected)) { S.selected = rows[0] ? keyOf(rows[0]) : null; S.panel = "none"; }
   const r = selectedJob();
   if (!r) S.panel = "none";
+  const first = !r && runProblem()?.kind === "firstDay";
   const panel = r && S.panel === "posting" ? postingHtml(r) : r && S.panel === "ask" ? askHtml(r) : "";
-  $("#view").innerHTML = `<div class="jobs" data-show="${S.jobOpen && r ? "detail" : "list"}">
+  $("#view").innerHTML = `<div class="jobs" data-show="${S.jobOpen && r ? "detail" : "list"}"${first ? ' data-first="1"' : ""}>
     ${listHtml()}
-    <section class="jobs-detail${panel ? " has-panel" : ""}" aria-label="Job detail">${detailHtml(r)}${panel}</section>
+    <section class="jobs-detail${panel ? " has-panel" : ""}" aria-label="${first ? "First run" : "Job detail"}">${first ? firstDayHtml() : detailHtml(r)}${panel}</section>
   </div>`;
   restore(snap);
 }
@@ -69,6 +73,7 @@ export const JOB_ACTIONS = {
   },
   "panel-close": () => closePanel(),
   "ask-suggest": (el) => { const r = selectedJob(); if (r) sendAsk(r, el.dataset.v); },
+  ...REVIEW_ACTIONS,
   "to-raise": () => { const el = $("#raise"); el?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); el?.focus({ preventScroll: true }); },
 };
 

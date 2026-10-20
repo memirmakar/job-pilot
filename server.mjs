@@ -6,6 +6,7 @@ import path from "node:path";
 import { spawn, execFile } from "node:child_process";
 import { DIR, DATA, loadSettings, loadProfile, saveSettings, saveProfile, isOnboarded, DEFAULT_SETTINGS } from "./config.mjs";
 import { resumeRoutes } from "./resume_routes.mjs";
+import { statusRoutes } from "./status_routes.mjs";
 import { stage } from "./reupload.mjs";
 import { archiveOriginal } from "./resumes.mjs";
 
@@ -133,7 +134,7 @@ const routes = {
   },
   "GET /api/applications": (req, res) => json(res, records()),
   "GET /api/log": (req, res) => json(res, logRows()),
-  "GET /api/meta": (req, res) => { const s = loadSettings(); json(res, { minAtsScore: s.minAtsScore, tailorTarget: s.tailorTarget, dailyLimit: s.dailyApplyLimit, dailyJobs: s.dailyJobs }); },
+  "GET /api/meta": (req, res) => { const s = loadSettings(); json(res, { minAtsScore: s.minAtsScore, tailorTarget: s.tailorTarget, dailyLimit: s.dailyApplyLimit, dailyJobs: s.dailyJobs, applyMode: s.applyMode, noReplyDays: s.noReplyDays }); },
   "GET /api/market": async (req, res) => {
     const { computeStats, loadRecords, loadAudit } = await fresh("market.mjs");
     json(res, {
@@ -278,7 +279,7 @@ const routes = {
   "POST /api/quit":(req, res) => { json(res, { ok: true }); setTimeout(() => process.exit(0), 300); },
 };
 
-Object.assign(routes, resumeRoutes({ body, json }));
+Object.assign(routes, resumeRoutes({ body, json }), statusRoutes({ body, json, startTask, running: () => runState().running }));
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);

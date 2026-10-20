@@ -43,6 +43,7 @@ addEventListener("popstate", () => { if (S.view !== "onboarding") go(location.ha
 
 export function render() {
   app.renderNav();
+  app.renderStatus(); // the bar reads run data too (problem states, waiting count)
   $("#view").classList.toggle("legacy", !REBUILT.has(S.view));
   if (S.view === "onboarding") return renderOnboarding();
   (SCREENS[S.view] || renderJobs)();

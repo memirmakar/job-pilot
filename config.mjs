@@ -11,7 +11,9 @@ const SETTINGS_FILE = path.join(DATA, "settings.json");
 const PROFILE_FILE = path.join(DATA, "profile.json");
 
 export const DEFAULT_SETTINGS = {
-  applyMode: "auto",            // "auto" = submit Easy Apply jobs; "analyze_only" = analyze + tailor, you apply yourself
+  // "auto" = submit Easy Apply jobs; "ask_below_target" = submit at or above tailorTarget, hold the rest for your OK;
+  // "ask_all" = hold every Easy Apply job for your OK; "analyze_only" = analyze + tailor, you apply yourself
+  applyMode: "auto",
   dailyJobs: 20,                // jobs Claude picks and analyzes per day
   dailyApplyLimit: 20,          // Easy Apply submissions per day
   scheduleTime: "10:00",
@@ -29,11 +31,14 @@ export const DEFAULT_SETTINGS = {
   libraryEveryDays: 7,
   marketEveryDays: 3,
   githubRefreshHours: 96,
+  noReplyDays: 14,              // an application with no news for this many days shows as "No reply" (computed in the app)
   availabilityCheckHours: 20,   // re-check open listings at most this often
   browserChannel: "msedge",
   delaySeconds: [6, 15],
   claudePath: null,
 };
+
+export const APPLY_MODES = ["auto", "ask_below_target", "ask_all", "analyze_only"];
 
 const readJson = (f, fb) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return fb; } };
 
@@ -61,7 +66,7 @@ export function loadConfig() {
   const searches = [...new Set((p.targets || []).flatMap((t) => t.searchTerms || []))];
   return {
     settings: s, profileData: p,
-    mode: s.applyMode === "auto" ? "auto" : "analyze_only",
+    mode: APPLY_MODES.includes(s.applyMode) ? s.applyMode : "analyze_only", // an unknown value never submits
     dailyLimit: s.dailyApplyLimit,
     dailyJobs: s.dailyJobs,
     delaySeconds: s.delaySeconds,

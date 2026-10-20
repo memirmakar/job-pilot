@@ -48,7 +48,7 @@ export function renderOnboarding() {
     <div class="card" style="margin-top:14px"><div class="form">
       <div class="row2"><div class="field"><label>Every day at</label><input type="time" id="ob-time" value="${esc(S.STATE.settings.scheduleTime)}"></div>
         <div class="field"><label>Jobs to analyze per day</label><input type="number" id="ob-jobs" min="1" max="60" value="${S.STATE.settings.dailyJobs}"></div></div>
-      <div class="field"><label>When a job has Easy Apply</label><select id="ob-mode"><option value="auto">Apply automatically</option><option value="analyze_only">Only analyze and tailor; I'll apply myself</option></select></div>
+      <div class="field"><label>When a job has Easy Apply</label><select id="ob-mode"><option value="auto">Apply automatically</option><option value="ask_below_target">Apply at my target and up; ask me below it</option><option value="ask_all">Fill the form, then ask me before every application</option><option value="analyze_only">Only analyze and tailor; I'll apply myself</option></select></div>
       <div class="field"><label>Claude usage</label><select id="ob-models"><option value="balanced">Balanced: Sonnet daily, Opus weekly (recommended)</option><option value="opus">Opus for everything (best, uses the most)</option><option value="sonnet">Sonnet for everything (lightest)</option></select>
         <div class="hint">Every job uses a few Claude calls (picking, scoring, tailoring, answering) from your plan.</div></div>
     </div></div>${nav(true, "Finish and start")}`;

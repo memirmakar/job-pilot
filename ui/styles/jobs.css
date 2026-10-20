@@ -29,6 +29,7 @@
 .job-row__tags > .jp-pill, .job-row__tags > .jp-tag { flex: none; white-space: nowrap; }
 .jobs-empty { padding: 40px 24px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
 .jobs-empty p { margin: 0; }
+.jobs-list__foot[hidden] { display: none; }
 .jobs-list__foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 10px 16px; border-top: 1px solid var(--separator); }
 
 /* ---------- detail ---------- */
@@ -137,6 +138,45 @@
 @media (prefers-reduced-motion: reduce) { .jd-ask { animation: none; } }
 
 /* ---------- narrower screens ---------- */
+/* ---------- statuses (stage 2): problem callout, timeline, hand marks, review sheet, first day ---------- */
+.jobs-problem { flex: none; }
+.jobs-problem__body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.jobs-problem__notes { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.jobs-problem__btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg-count { margin-left: 4px; color: var(--warning-text); }
+.bar-link { color: var(--link); text-decoration: none; }
+.bar-link:hover { text-decoration: underline; }
+.jd-timeline { flex: none; margin: 0; padding: 10px 18px; list-style: none; display: flex; align-items: center; gap: 12px; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-card); }
+.jd-timeline li { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 10px; }
+.jd-timeline li:first-child { flex: none; }
+.jd-timeline__line { flex: 1; min-width: 12px; height: 2px; border-radius: 1px; background: var(--chart-track); }
+.jd-timeline__dot { width: 10px; height: 10px; flex: none; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--control-border); }
+.jd-timeline li.is-done .jd-timeline__line, .jd-timeline li.is-done .jd-timeline__dot { background: var(--accent); border-color: var(--accent); }
+.jd-timeline__text { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; }
+.jd-timeline__text .foot { overflow: hidden; text-overflow: ellipsis; }
+.jd-timeline__label { font: 600 13px/18px var(--font-sans); color: var(--text-secondary); }
+.jd-timeline li.is-done .jd-timeline__label { color: var(--text); }
+.jd-marks { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; }
+.jd-marks .foot { margin-right: 4px; }
+.jd-actions--row { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.rv { display: flex; flex-direction: column; gap: 16px; }
+.rv-score { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: var(--radius-lg); background: var(--mantle); }
+.rv-score__why { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.rv-file { margin-left: auto; display: flex; align-items: center; gap: 10px; min-width: 0; color: var(--accent-text); }
+.rv-file__text { display: flex; flex-direction: column; min-width: 0; color: var(--text); }
+.rv-file__name { font: 600 13px/18px var(--font-sans); max-width: 230px; }
+.rv-list { display: flex; flex-direction: column; gap: 12px; }
+.rv-list .cap { margin: 0; }
+.rv-q { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.rv-field .jp-input { min-height: 0; font-size: 14px; line-height: 20px; }
+.rv-text { resize: vertical; }
+.rv-foot { margin-right: auto; }
+.first-day { flex: 1; display: flex; align-items: center; justify-content: center; }
+.first-day__card { width: min(600px, 100%); box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 16px; }
+.first-day__card p, .first-day__card h2 { margin: 0; }
+.first-day__profile { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--separator); border-bottom: 1px solid var(--separator); }
+.first-day__what { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
 @media (max-width: 1280px) {
   .jd-steps li { grid-template-columns: 22px minmax(0, 1fr) auto 44px; }
   .jd-steps li > :nth-child(4) { grid-column: 2 / 4; grid-row: 2; }
@@ -149,11 +189,23 @@
   .jd-resume__side { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--separator); }
   .jd-head { flex-wrap: wrap; }
   .jd-head__actions { padding-top: 0; width: 100%; }
+  .jd-timeline { overflow-x: auto; }
+  .jd-timeline li { flex: none; }
 }
 /* Phones and small windows: the list, then one job with a back button */
 @media (max-width: 900px) {
   .jobs { display: block; height: auto; min-height: 0; }
   .jobs[data-show="list"] .jobs-detail, .jobs[data-show="detail"] .jobs-list { display: none; }
+  .jobs[data-first] .jobs-detail { display: flex; margin-top: var(--space-5); }
+  .jd-timeline { flex-direction: column; align-items: stretch; gap: 6px; padding: 12px 16px; overflow: visible; }
+  .jd-timeline li { flex: none; }
+  .jd-timeline__line { display: none; }
+  .jd-timeline__text { white-space: normal; }
+  .rv-score { flex-wrap: wrap; }
+  .rv-file { margin-left: 0; flex-basis: 100%; }
+  .sheet--center .sheet__actions { flex-wrap: wrap; }
+  .first-day__card { padding: 20px; }
+  .first-day__profile { flex-wrap: wrap; }
   .jobs-list { width: auto; }
   .jobs-list__scroll { overflow: visible; }
   .jd-back { display: inline-flex; flex: 0 0 100%; justify-content: flex-start; margin-left: calc(-1 * var(--space-2)); }

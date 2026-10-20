@@ -1,15 +1,24 @@
 // Jobs data: turns stored job records into what the list and detail show. No HTML here.
 import { S } from "../../state.js";
-import { statusBucket } from "../../components/status-pill.js";
+import { shownBucket } from "./track.js";
 
 export const keyOf = (r) => `${r.site}-${r.id}`;
 export const target = () => S.META.tailorTarget ?? 80;
 export const cutoff = () => S.META.minAtsScore ?? 55;
 
 // ----- scores -----
-// score: what counts now; from: the original resume's score when the tailored one is used
+// score: what counts now; from: the original resume's score when the tailored one is used.
+// Sent jobs keep the score of the version that was sent; newer: a later version's score (re-uploaded after sending).
+export function sentScore(r) {
+  const t = r.tailored, sent = t?.sent || (r.status === "applied" && t?.uploaded === true ? { v: 1 } : null);
+  if (!sent) return null;
+  const vs = t.versions?.length ? t.versions : [{ v: 1, score: t.score }];
+  const v = vs.find((x) => x.v === sent.v), cur = vs.at(-1);
+  return v?.score == null ? null : { score: Math.round(v.score), newer: cur.v !== sent.v && cur.score != null ? Math.round(cur.score) : null };
+}
 export function scores(r) {
-  const t = r.tailored;
+  const t = r.tailored, sent = sentScore(r);
+  if (sent) return { score: sent.score, from: Math.round(t.baseScore), state: "tailored", newer: sent.newer };
   if (t?.used) return { score: Math.round(t.score), from: Math.round(t.baseScore), state: "tailored" };
   return { score: Math.round(r.ats?.best_score ?? t?.baseScore ?? 0), from: null, state: t ? "kept" : "none" };
 }
@@ -25,7 +34,7 @@ export function targetPill(score) {
 export function applyType(r) {
   if (r.easyApply === true) return "Easy Apply";
   if (r.easyApply === false || r.status === "external") return "External";
-  return ["applied", "needs_manual", "dry_run", "ready_to_apply"].includes(r.status) ? "Easy Apply" : "";
+  return ["applied", "needs_manual", "dry_run", "ready_to_apply", "waiting_ok", "approved"].includes(r.status) ? "Easy Apply" : "";
 }
 
 // ----- skills -----
@@ -70,7 +79,7 @@ export const postedLine = (r) => [posted(r), applicants(r)].filter(Boolean).join
 // ----- list: archive, search, filter, grouping -----
 export const FILTERS = [["all", "All"], ["todo", "To apply"], ["applied", "Applied"], ["external", "External"], ["attention", "Attention"]];
 const MATCH = { all: () => true, external: (r) => applyType(r) === "External" };
-export const matchesFilter = (r, f) => (MATCH[f] || ((x) => statusBucket(x.status) === f))(r);
+export const matchesFilter = (r, f) => (MATCH[f] || ((x) => shownBucket(x) === f))(r);
 
 export function matchesQuery(r, q) {
   if (!q) return true;
@@ -113,7 +122,7 @@ export function runNumbers() {
 }
 
 // ----- detail: answers and raise steps -----
-export const answers = (r) => (r.steps || []).flatMap((s) => s.fields || []).filter((f) => f.source === "claude" && f.label);
+export const answers = (r) => (r.steps || []).flatMap((s) => s.fields || []).filter((f) => (f.source === "claude" || f.source === "approved") && f.label);
 
 export const RECTYPE = { project: "Portfolio project", github: "GitHub", portfolio: "Portfolio", certification: "Certification", course: "Course",
   skill: "Skill", resume: "Resume edit", linkedin_profile: "LinkedIn profile", other: "Other" };

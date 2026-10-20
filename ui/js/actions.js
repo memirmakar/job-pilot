@@ -50,6 +50,7 @@ const ACTIONS = {
   // shell
   "insights-tab": (el) => go("insights/" + el.dataset.tab),
   "ask-claude": () => openAskClaude(),
+  "show-waiting": () => { go("jobs"); S.filter = "todo"; const w = S.DATA.find((r) => r.status === "waiting_ok" && !r.archived); if (w) { S.selected = `${w.site}-${w.id}`; S.jobOpen = true; } app.render(); },
   more: () => toggleMenu(),
   "theme-toggle": () => { setChoice(isDark() ? "light" : "dark"); renderMenu(); },
   "theme-system": () => { setChoice(null); renderMenu(); },

@@ -3,14 +3,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import config, { DIR } from "./config.mjs";
-import { loadResumes, scoreResumes, answerQuestions, tailorResume, selectJobs, findClaude, ClaudeLoginError, ClaudeLimitError } from "./llm.mjs";
+import { loadResumes, scoreResumes, tailorResume, selectJobs, findClaude, ClaudeLoginError, ClaudeLimitError } from "./llm.mjs";
 import { renderResumePdf, closePdfBrowser } from "./resume_pdf.mjs";
 import { loadGithub, githubBrief } from "./github.mjs";
 import { runMarketReview, reviewDue } from "./market.mjs";
 import { libraryDue, buildLibrary, libraryFiles } from "./library.mjs";
 import { runDoctor, shouldAutoRun } from "./doctor.mjs";
 import * as LIN from "./linkedin.mjs";
-import { LI, sleep, short, pause, btn, exists, norm } from "./linkedin.mjs";
+import { sleep, pause, norm } from "./linkedin.mjs";
+import { nextScheduled } from "./linkedin_guard.mjs";
+import { easyApply, sendQueue } from "./easy_apply.mjs";
+import { holdReason, queued } from "./approval.mjs";
+import { syncApplied } from "./applied_sync.mjs";
 import * as S from "./store.mjs";
 
 const { log } = S;
@@ -58,87 +62,6 @@ async function tailorFor(rec, files) {
   rec.chosenResume = rec.tailored.used ? best.file : base.file;
   S.saveRecord(rec);
 }
-const chosenPath = (rec, files) => rec.tailored?.used ? path.join(DIR, rec.tailored.path) : (files.find((f) => f.file === rec.chosenResume)?.path || null);
-
-// ---------- Easy Apply ----------
-async function fillStep(page, root, rec, files, rejection = null) {
-  const fields = await LIN.scanFields(root);
-  const empty = rejection ? fields.filter((f) => f.kind !== "select" || !f.value) : fields.filter((f) => !f.value);
-  const step = { fields: [], ...(rejection ? { retry: true } : {}) };
-  for (const f of fields.filter((f) => !empty.includes(f))) step.fields.push({ label: f.label, kind: f.kind, value: f.value, source: "prefilled" });
-  if (empty.length) {
-    const { answers, usage } = await answerQuestions({
-      job: rec, resumeFile: rec.chosenResume, resumePath: chosenPath(rec, files), fields: empty, previous: rec.steps.flatMap((s) => s.fields), rejection,
-    });
-    S.addUsage(rec, usage);
-    for (const f of empty) {
-      const a = answers.find((x) => x.id === f.id);
-      const entry = { label: f.label, kind: f.kind, options: f.options, source: "claude", value: a?.value ?? "", reasoning: a?.reasoning ?? "No answer returned", confidence: a?.confidence ?? "low" };
-      if (a && a.value !== "") {
-        try { entry.value = await LIN.applyAnswer(page, root, f, a.value); } catch (e) { entry.error = e.message; }
-      }
-      step.fields.push(entry);
-      await sleep(250);
-    }
-  }
-  return step;
-}
-
-async function easyApply(page, rec, files, { dryRun, easyBtn }) {
-  await easyBtn.click();
-  await sleep(2500);
-  const dialog = page.getByRole("dialog").filter({ visible: true }).last();
-  let lastProgress = "", stuck = 0, retries = 0;
-  for (let n = 0; n < 15; n++) {
-    // Resume step: upload the chosen PDF (tailored, library or original); fall back to picking it by name
-    if (!rec.resumeSelection && (await LIN.selectResume(page, dialog, "\u0000"))) {
-      const file = chosenPath(rec, files);
-      let res = file && config.tailor.uploadToLinkedIn && (await LIN.uploadResume(page, dialog, file)) ? await LIN.selectResume(page, dialog, path.basename(file)) : null;
-      if (!res?.selected) {
-        res = await LIN.selectResume(page, dialog, rec.ats.best_file);
-        rec.warnings.push(res?.selected ? `Couldn't upload ${rec.chosenResume}; used "${rec.ats.best_file}" from your LinkedIn resumes.` : "Couldn't upload or find the chosen resume; LinkedIn's default resume was used.");
-      } else if (rec.tailored) rec.tailored.uploaded = rec.tailored.used;
-      rec.resumeSelection = res || { selected: false };
-    }
-    const step = await fillStep(page, dialog, rec, files);
-    if (step.fields.length) rec.steps.push(step);
-    S.saveRecord(rec);
-    await short();
-
-    const submit = btn(dialog, LI.submit);
-    if (await exists(submit)) {
-      if (dryRun) { await LIN.closeDialog(page); return S.finish(rec, "dry_run", "stopped before submit (dry run)"); }
-      await submit.click();
-      await sleep(3000);
-      const done = btn(page, LI.done);
-      if (await exists(done)) await done.click().catch(() => {}); else await btn(page, LI.dismiss).click().catch(() => {});
-      rec.submittedAt = new Date().toISOString();
-      // The Resumes screen shows this version as sent and read-only
-      if (rec.tailored?.uploaded) rec.tailored.sent = { v: rec.tailored.versions?.at(-1)?.v || 1, at: rec.submittedAt, company: rec.company };
-      S.count("applied");
-      return S.finish(rec, "applied");
-    }
-    const nextBtn = (await exists(btn(dialog, LI.review))) ? btn(dialog, LI.review) : btn(dialog, LI.next);
-    if (!(await exists(nextBtn))) break;
-    const progress = await dialog.innerText().catch(() => "");
-    if (progress === lastProgress) stuck++; else stuck = 0;
-    lastProgress = progress;
-    if (stuck >= 1 && retries < 2) {
-      log("  Step rejected, asking Claude to fix the answers...");
-      const fix = await fillStep(page, dialog, rec, files, progress.slice(0, 3000));
-      if (fix.fields.length) rec.steps.push(fix);
-      retries++; stuck = 0; lastProgress = "";
-    } else if (stuck >= 1) {
-      rec.warnings.push(`Stuck on a step. The form said: ${progress.replace(/\s+/g, " ").slice(0, 400)}`);
-      break;
-    }
-    await nextBtn.click();
-    await sleep(2000);
-  }
-  await LIN.closeDialog(page);
-  return S.finish(rec, "needs_manual", rec.warnings.at(-1) || "The form couldn't be completed automatically");
-}
-
 // ---------- one job ----------
 async function processJob(page, pick, files, opts) {
   const jp = await LIN.readJobPage(page, pick.id);
@@ -171,9 +94,11 @@ async function processJob(page, pick, files, opts) {
     return S.finish(rec, "external", "Apply on the company's site; your tailored resume is ready to download");
   }
   if (finalScore < config.llm.minAtsScore) return S.finish(rec, "resume_insufficient", `final ATS score ${finalScore} < ${config.llm.minAtsScore}`);
-  if (config.mode !== "auto") return S.finish(rec, "ready_to_apply", "Analyze-only mode: review and apply yourself");
-  if (S.appliedToday() >= config.dailyLimit) return S.finish(rec, "ready_to_apply", "Daily application limit reached");
-  try { return await easyApply(page, rec, files, { ...opts, easyBtn: jp.easyBtn }); }
+  if (opts.mode === "analyze_only") return S.finish(rec, "ready_to_apply", "Analyze-only mode: review and apply yourself");
+  // Held jobs get their form filled but wait for your OK (approval.mjs); holding never submits, so no daily limit
+  const hold = holdReason(opts.mode, finalScore, config.tailor.target);
+  if (!hold && S.appliedToday() >= config.dailyLimit) return S.finish(rec, "ready_to_apply", "Daily application limit reached");
+  try { return await easyApply(page, rec, files, { dryRun: opts.dryRun, easyBtn: jp.easyBtn, hold }); }
   finally { S.saveRecord(rec); }
 }
 
@@ -199,10 +124,11 @@ async function checkOpenListings(page, maxChecks = 80) {
 }
 
 // ---------- the run ----------
-export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinity, noDoctor = false } = {}) {
-  const run = S.startRun(dryRun ? "dry-run" : "daily", { dryRun, onlyJob });
+// mode: overrides settings.applyMode for this run (CLI --mode, used for dry-run tests)
+export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinity, noDoctor = false, noTracker = false, mode = config.mode } = {}) {
+  const run = S.startRun(dryRun ? "dry-run" : "daily", { dryRun, onlyJob, mode });
   const started = Date.now();
-  let stop = "", ctx = null, page = null;
+  let stop = "", stopKind = "", resumeAt = null, ctx = null, page = null;
   const outcome = { applied: 0, analyzed: 0 };
   try {
     // 1. preflight
@@ -222,9 +148,17 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
     ctx = await LIN.launch();
     page = ctx.pages()[0] || (await ctx.newPage());
 
-    // 2. collect
+    // 2. jobs you approved go first ("Send now" runs just one of them)
+    const approved = onlyJob ? [S.loadRecord("linkedin", onlyJob)].filter((r) => r?.status === "approved") : queued();
+    if (approved.length) {
+      S.setPhase("send approved", `${approved.length} jobs`);
+      outcome.applied += await sendQueue(page, approved, files, { dryRun, limit: onlyJob ? Infinity : config.dailyLimit });
+    }
+
+    // 3. collect
     let picks = [];
-    if (onlyJob) picks = [{ id: onlyJob, key: onlyJob, field: config.targets[0]?.field || "Other", relevance: 10, reason: "requested" }];
+    if (onlyJob && !approved.length) picks = [{ id: onlyJob, key: onlyJob, field: config.targets[0]?.field || "Other", relevance: 10, reason: "requested" }];
+    else if (onlyJob) picks = [];
     else {
       const quota = Math.min(config.dailyJobs - S.analyzedToday(), limit);
       if (quota <= 0) { log(`Already analyzed ${config.dailyJobs} jobs today.`); }
@@ -271,16 +205,16 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
     S.setPhase("analyze", `${picks.length} jobs`);
     let consecutiveErrors = 0;
     for (const pick of picks) {
-      if (Date.now() - started > config.maxRunMinutes * 60e3) { stop = `Stopped after ${config.maxRunMinutes} minutes.`; break; }
+      if (Date.now() - started > config.maxRunMinutes * 60e3) { [stop, stopKind] = [`Stopped after ${config.maxRunMinutes} minutes, your time limit for a run.`, "time_limit"]; break; }
       try {
-        const r = await processJob(page, pick, files, { dryRun });
+        const r = await processJob(page, pick, files, { dryRun, mode });
         consecutiveErrors = 0;
         if (r === "applied") outcome.applied++;
         if (r) outcome.analyzed++;
       } catch (e) {
         if (e instanceof ClaudeLimitError) throw e;
-        if (e instanceof ClaudeLoginError || e instanceof LIN.LinkedInLoginError) throw e;
-        if (/has been closed/i.test(e.message)) { stop = "The browser window was closed."; break; }
+        if (e instanceof ClaudeLoginError || e instanceof LIN.LinkedInLoginError || e instanceof LIN.LinkedInLimitError) throw e;
+        if (/has been closed/i.test(e.message)) { [stop, stopKind] = ["The browser window was closed.", "browser_closed"]; break; }
         consecutiveErrors++;
         S.count("errors");
         S.writeLog({ site: "linkedin", id: pick.id, title: pick.title, company: pick.company, url: `https://www.linkedin.com/jobs/view/${pick.id}/`, status: "error", reason: e.message.split("\n")[0] });
@@ -288,7 +222,7 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
         if (consecutiveErrors >= 3 && !noDoctor && shouldAutoRun("Repeated errors")) {
           S.anomaly("repeated_errors", e.message);
           const rep = await runDoctor({ reason: `Repeated errors while processing jobs: ${e.message.split("\n")[0]}`, context: (e.stack || "").slice(0, 2000) + "\n\nRecent events:\n" + run.events.slice(-30).map((x) => x.line).join("\n") });
-          if (!rep.fixed) { stop = "Stopped after repeated errors; see the Doctor page."; break; }
+          if (!rep.fixed) { [stop, stopKind] = [`Stopped after repeated errors: ${e.message.split("\n")[0].slice(0, 160)}`, "repeated_errors"]; break; }
           consecutiveErrors = 0;
         }
       }
@@ -300,13 +234,23 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
       await runDoctor({ reason: "Unreadable job pages: LinkedIn's job page layout may have changed", context: run.events.slice(-40).map((x) => x.line).join("\n") });
     }
 
-    // 5. archive closed listings
+    // 5. what happened to past applications (LinkedIn's job tracker, read only), then archive closed listings
+    if (!onlyJob && !noTracker) {
+      S.setPhase("tracker");
+      try { const t = await syncApplied(page); log(`Job tracker: ${t.read} applications read, ${t.updated} updated.`); }
+      catch (e) { if (e instanceof LIN.LinkedInLoginError || e instanceof LIN.LinkedInLimitError) throw e; log(`Couldn't read LinkedIn's job tracker: ${e.message.split("\n")[0]}`); }
+    }
     if (!dryRun && !onlyJob) await checkOpenListings(page);
   } catch (e) {
-    if (e instanceof ClaudeLimitError) stop = `Claude plan limit reached (${e.message.replace(/^.*?·\s*/, "")}). The rest continues next run.`;
-    else if (e instanceof ClaudeLoginError) stop = `Claude Code isn't ready: ${e.message}`;
-    else if (e instanceof LIN.LinkedInLoginError) stop = "You're logged out of LinkedIn. Use \"Log in to LinkedIn\" in the app.";
-    else { stop = `Run failed: ${e.message}`; S.anomaly("crash", e.stack || e.message); }
+    // stopKind tells the app which problem state to show (Jobs callouts); stop is the sentence it quotes
+    if (e instanceof ClaudeLimitError) [stop, stopKind] = [`Claude plan limit reached (${e.message.replace(/^.*?·\s*/, "")}). The rest continues next run.`, "claude_limit"];
+    else if (e instanceof ClaudeLoginError) [stop, stopKind] = [`Claude Code isn't ready: ${e.message}`, "claude_login"];
+    else if (e instanceof LIN.LinkedInLoginError) [stop, stopKind] = ["You're logged out of LinkedIn. Use \"Log in to LinkedIn\" in the app.", "linkedin_login"];
+    else if (e instanceof LIN.LinkedInLimitError) {
+      [stop, stopKind, resumeAt] = [`LinkedIn is limiting your account: ${e.message}. Paused to keep it safe.`, "linkedin_limit", nextScheduled(config.settings)];
+      S.anomaly("linkedin_limit", e.message);
+    }
+    else { [stop, stopKind] = [`Run failed: ${e.message}`, "crash"]; S.anomaly("crash", e.stack || e.message); }
     log("\n" + stop);
   } finally {
     await ctx?.close().catch(() => {});
@@ -324,7 +268,7 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
   const summary = `${outcome.applied} applied, ${outcome.analyzed} analyzed${run.counts.archived ? `, ${run.counts.archived} archived` : ""}.`;
   S.notify(stop ? "Job Pilot stopped early" : "Job Pilot finished", `${summary}${stop ? " " + stop : ""}`);
   log(`\nDone. ${summary}${stop ? " " + stop : ""}`);
-  return S.endRun({ ...outcome, stop, summary });
+  return S.endRun({ ...outcome, stop, stopKind: stop ? stopKind || "stopped" : "", stoppedAt: stop ? new Date().toISOString() : null, resumeAt, summary });
 }
 
 // ---------- selftest (used by the doctor): can we read LinkedIn at all? No Claude, no applying. ----------

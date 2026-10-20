@@ -40,7 +40,7 @@ export function renderSettings() {
       <div class="row2">
         <div class="field"><label>Daily run</label><div class="btns"><label class="check"><input type="checkbox" id="s-sched" ${s.scheduleEnabled ? "checked" : ""}> Every day at</label><input type="time" id="s-time" value="${esc(s.scheduleTime)}" style="width:130px"></div>
           <div class="hint">${S.STATE.schedule.exists ? `Scheduled · next ${fmtDate(S.STATE.schedule.next)}` : "Not scheduled"}. Your PC must be on and you must be logged in to Windows.</div></div>
-        <div class="field"><label>When a job has Easy Apply</label><select id="s-mode">${opt("auto", s.applyMode, "Apply automatically")}${opt("analyze_only", s.applyMode, "Only analyze and tailor; I'll apply myself")}</select></div>
+        <div class="field"><label>When a job has Easy Apply</label><select id="s-mode">${opt("auto", s.applyMode, "Apply automatically")}${opt("ask_below_target", s.applyMode, "Apply at my target and up; ask me below it")}${opt("ask_all", s.applyMode, "Fill the form, then ask me before every application")}${opt("analyze_only", s.applyMode, "Only analyze and tailor; I'll apply myself")}</select></div>
       </div>
       <div class="row2">
         <div class="field"><label>Jobs to analyze per day</label><input type="number" id="s-jobs" min="1" max="60" value="${s.dailyJobs}"></div>

@@ -27,5 +27,6 @@ export function hbars(items, { max, marker } = {}) {
 
 export const KIND = { location: "Location", travel: "Travel", military: "Military", driving_license: "License", language: "Language", education: "Education", experience: "Experience", soft_skill: "Soft skill", generic_duty: "Generic duty", noise: "Not a skill" };
 export const PHASE = { preflight: "Getting ready", library: "Updating resume library", collect: "Searching LinkedIn", select: "Claude is picking jobs",
-  analyze: "Analyzing and applying", availability: "Checking listings are still open", "market review": "Updating market review", starting: "Starting" };
+  analyze: "Analyzing and applying", availability: "Checking listings are still open", "market review": "Updating market review", starting: "Starting",
+  "send approved": "Sending the jobs you approved", tracker: "Reading your LinkedIn job tracker" };
 

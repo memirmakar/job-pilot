@@ -1,6 +1,7 @@
 // Command-line entry point. The app and the scheduled task call these; you normally don't need to.
-//   node apply.mjs run [--dry-run] [--limit N] [--job ID] [--no-doctor]   the daily run
+//   node apply.mjs run [--dry-run] [--limit N] [--job ID] [--no-doctor] [--mode M] [--no-tracker]   the daily run (--mode overrides applyMode once; --no-tracker skips the job tracker read, for tests)
 //   node apply.mjs login                                                  open LinkedIn in a normal Edge window to sign in
+//   node apply.mjs tracker                                                read LinkedIn's job tracker; prints what would change, saves nothing
 //   node apply.mjs selftest                                               check LinkedIn can be read (JSON; used by the doctor)
 //   node apply.mjs review | library | github [--refresh] | doctor "<problem>"
 import { runDaily, selftest } from "./pipeline.mjs";
@@ -9,6 +10,7 @@ import { loadGithub, githubBrief } from "./github.mjs";
 import { runMarketReview } from "./market.mjs";
 import { buildLibrary } from "./library.mjs";
 import { runDoctor } from "./doctor.mjs";
+import { APPLY_MODES } from "./config.mjs";
 
 const argv = process.argv.slice(2);
 const flag = (f) => argv.includes(f);
@@ -18,12 +20,17 @@ const brief = async () => { try { return githubBrief(await loadGithub()); } catc
 
 try {
   if (cmd === "run") {
-    const r = await runDaily({ dryRun: flag("--dry-run"), limit: Number(val("--limit")) || Infinity, onlyJob: val("--job") || null, noDoctor: flag("--no-doctor") });
+    const mode = val("--mode");
+    if (mode && !APPLY_MODES.includes(mode)) throw new Error(`--mode must be one of ${APPLY_MODES.join(", ")}`);
+    const r = await runDaily({ dryRun: flag("--dry-run"), limit: Number(val("--limit")) || Infinity, onlyJob: val("--job") || null, noDoctor: flag("--no-doctor"), noTracker: flag("--no-tracker"), ...(mode ? { mode } : {}) });
     process.exitCode = r?.outcome?.stop?.startsWith("Run failed") ? 1 : 0;
   } else if (cmd === "login") {
     const p = openNormalEdge(["https://www.linkedin.com/login"]);
     console.log("Sign in to LinkedIn in the Edge window, then close it.");
     await new Promise((r) => p.on("exit", r));
+  } else if (cmd === "tracker") {
+    const { trackerReport } = await import("./applied_sync.mjs");
+    console.log(JSON.stringify(await trackerReport(), null, 2));
   } else if (cmd === "selftest") {
     console.log(JSON.stringify(await selftest(), null, 2));
   } else if (cmd === "review") {

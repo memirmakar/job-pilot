@@ -59,6 +59,7 @@ App map (all in the current directory):
 - config.mjs (settings/profile loader; user data in data/settings.json and data/profile.json)
 - linkedin.mjs (all LinkedIn DOM logic: search cards, job page, Easy Apply form, text patterns in LI)
 - pipeline.mjs (daily run), store.mjs (records/log/run status), llm.mjs (Claude calls), library.mjs, market.mjs, github.mjs, resume_pdf.mjs
+- easy_apply.mjs (Easy Apply form: submit, hold, send approved), linkedin_guard.mjs (signed-out / limit page checks), applied_sync.mjs (LinkedIn job tracker reader), approval.mjs + statuses.mjs (Waiting for your OK, status history)
 - server.mjs + ui/ (the app: ui/index.html, ui/js/**/*.js ES modules, ui/styles/*.css; see CLAUDE.md), apply.mjs (command line entry), Install.cmd / install.ps1 (installer)
 - Logs: data/runs/current.json and data/runs/*.json (run status, events, anomalies), data/install.log, applications.csv
 
