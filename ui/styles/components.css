@@ -1,0 +1,106 @@
+/* Job Pilot components: plain CSS classes, every value from tokens.css. Prefix jp-. */
+
+.jp-root { background: var(--canvas); color: var(--text); font-family: var(--font-sans); font-size: 15px; line-height: 22px;
+  -webkit-font-smoothing: antialiased; }
+.jp-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- Button: capsules ---------- */
+.jp-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1); height: 34px; padding: 0 var(--space-4);
+  border: 0; border-radius: var(--radius-pill); font: 600 14px/1 var(--font-sans); letter-spacing: -0.005em; cursor: pointer;
+  background: var(--fill); color: var(--text); transition: background-color .15s ease, transform .1s ease; white-space: nowrap; text-decoration: none; }
+.jp-btn:hover { background: var(--fill-strong); }
+.jp-btn:active { transform: scale(.97); }
+.jp-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.jp-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.jp-btn--primary { background: var(--accent); color: var(--on-accent); }
+.jp-btn--primary:hover { background: var(--accent); filter: brightness(1.06); }
+.jp-btn--tinted { background: var(--accent-soft); color: var(--accent-text); }
+.jp-btn--tinted:hover { background: var(--accent-soft); filter: brightness(1.1); }
+.jp-btn--plain { background: transparent; color: var(--accent-text); padding: 0 var(--space-2); }
+.jp-btn--plain:hover { background: var(--accent-soft); }
+.jp-btn--danger { background: var(--danger-soft); color: var(--danger-text); }
+.jp-btn--danger:hover { background: var(--danger-soft); filter: brightness(1.1); }
+.jp-btn--sm { height: 28px; padding: 0 var(--space-3); font-size: 13px; }
+.jp-btn--lg { height: 44px; padding: 0 var(--space-6); font-size: 16px; }
+
+/* ---------- Segmented control: the top navigation ---------- */
+.jp-seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--fill); border-radius: var(--radius-md); }
+.jp-seg__item { border: 0; background: transparent; color: var(--text-secondary); font: 500 13px/1 var(--font-sans); padding: 8px var(--space-3);
+  border-radius: var(--radius-sm); cursor: pointer; transition: background-color .2s ease, color .2s ease; white-space: nowrap; }
+.jp-seg__item:hover { color: var(--text); }
+.jp-seg__item[aria-selected="true"] { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: var(--shadow-thumb); }
+.jp-seg__item:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* ---------- Status pill ---------- */
+.jp-pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 10px; border-radius: var(--radius-pill);
+  font: 600 12px/1 var(--font-sans); white-space: nowrap; background: var(--fill); color: var(--text-secondary); }
+.jp-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.jp-pill--success { background: var(--success-soft); color: var(--success-text); }
+.jp-pill--warning { background: var(--warning-soft); color: var(--warning-text); }
+.jp-pill--serious { background: var(--serious-soft); color: var(--serious-text); }
+.jp-pill--danger { background: var(--danger-soft); color: var(--danger-text); }
+.jp-pill--accent { background: var(--accent-soft); color: var(--accent-text); }
+
+/* ---------- Tag (keyword chips) ---------- */
+.jp-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-xs);
+  font: 500 12px/1 var(--font-sans); background: var(--fill); color: var(--text-secondary); }
+.jp-tag--met { background: var(--success-soft); color: var(--success-text); }
+.jp-tag--missing { background: var(--serious-soft); color: var(--serious-text); }
+
+/* ---------- Card & grouped list ---------- */
+.jp-card { background: var(--surface); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-card); }
+.jp-card__label { font: 600 11px/13px var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--text-tertiary); margin: 0 0 var(--space-3); }
+.jp-card__title { font: 600 17px/22px var(--font-sans); letter-spacing: -.01em; margin: 0; }
+.jp-list { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden; }
+.jp-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--space-3); align-items: center; padding: var(--space-3) var(--space-4);
+  cursor: pointer; position: relative; }
+.jp-row + .jp-row::before { content: ""; position: absolute; top: 0; left: var(--space-4); right: 0; height: 1px; background: var(--separator); }
+.jp-row:hover { background: var(--surface-hover); }
+.jp-row[aria-selected="true"] { background: var(--accent-soft); }
+.jp-row__title { font: 600 15px/20px var(--font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jp-row__meta { font: 500 13px/18px var(--font-sans); color: var(--text-secondary); display: flex; gap: var(--space-2); align-items: center; min-width: 0; }
+.jp-row__end { grid-row: span 2; display: flex; align-items: center; gap: var(--space-2); }
+.jp-row__score { font: 600 15px/1 var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.jp-row__score small { display: block; font: 500 11px/14px var(--font-mono); color: var(--text-tertiary); margin-top: 2px; }
+.jp-row__chevron { width: 8px; height: 8px; border-right: 2px solid var(--text-tertiary); border-top: 2px solid var(--text-tertiary); transform: rotate(45deg); margin-left: var(--space-1); }
+
+/* ---------- Score ring ---------- */
+.jp-ring { position: relative; width: 72px; height: 72px; flex: none; }
+.jp-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.jp-ring__track { fill: none; stroke: var(--chart-track); stroke-width: 7; }
+.jp-ring__value { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round; }
+.jp-ring--good .jp-ring__value { stroke: var(--success); }
+.jp-ring--low .jp-ring__value { stroke: var(--serious); }
+.jp-ring__num { position: absolute; inset: 0; display: grid; place-items: center; font: 700 20px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
+
+/* ---------- Text field ---------- */
+.jp-field { display: grid; gap: 6px; }
+.jp-field__label { font: 600 13px/18px var(--font-sans); color: var(--text); }
+.jp-field__hint { font: 400 12px/16px var(--font-sans); color: var(--text-tertiary); }
+.jp-input { width: 100%; box-sizing: border-box; height: 38px; padding: 0 var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--control-border);
+  background: var(--fill); color: var(--text); font: 400 15px/22px var(--font-sans); }
+textarea.jp-input { height: auto; min-height: 96px; padding: var(--space-2) var(--space-3); resize: vertical; }
+.jp-input::placeholder { color: var(--text-tertiary); }
+.jp-input:focus { outline: 2px solid var(--focus-ring); outline-offset: 1px; border-color: transparent; }
+
+/* ---------- Callout ---------- */
+.jp-callout { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+  background: var(--info-soft); color: var(--text); font: 400 14px/20px var(--font-sans); }
+.jp-callout__icon { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font: 700 12px/1 var(--font-sans);
+  background: var(--link); color: var(--on-accent); }
+/* glyph circles use the text-grade tones so on-accent stays legible on them in both themes */
+.jp-callout--warning { background: var(--warning-soft); }
+.jp-callout--warning .jp-callout__icon { background: var(--warning-text); }
+.jp-callout--danger { background: var(--danger-soft); }
+.jp-callout--danger .jp-callout__icon { background: var(--danger-text); }
+.jp-callout b { font-weight: 600; }
+
+/* ---------- Top bar (translucent material) ---------- */
+.jp-bar { display: flex; align-items: center; gap: var(--space-6); height: 56px; padding: 0 var(--space-6); background: var(--material);
+  -webkit-backdrop-filter: var(--material-blur); backdrop-filter: var(--material-blur); border-bottom: 1px solid var(--separator); }
+.jp-bar__brand { font: 700 16px/1 var(--font-display); letter-spacing: -.01em; display: flex; align-items: center; gap: var(--space-2); white-space: nowrap; }
+.jp-bar__mark { width: 24px; height: 24px; border-radius: 7px; background: var(--accent); }
+.jp-bar__status { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); font: 500 13px/1 var(--font-sans); color: var(--text-secondary); }
+.jp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+@media (prefers-reduced-motion: reduce) { .jp-btn, .jp-seg__item { transition: none; } .jp-btn:active { transform: none; } }

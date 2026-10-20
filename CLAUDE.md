@@ -1,0 +1,86 @@
+# Job Pilot
+
+Local Windows app that searches LinkedIn daily (Playwright + Edge), has the user's Claude Code CLI pick, score and tailor
+resumes for each job, applies via Easy Apply where allowed, and explains every decision in a local web UI. See README.md for the user's view.
+
+**Rule for every session: read this file first, open only the files and canvas boards the task needs, and commit at the end.**
+
+## Run and test
+- App: `node server.mjs` (opens http://127.0.0.1:4510). `PORT=4519 node server.mjs --no-open` runs a second copy for testing.
+- Install for users is `Install.cmd` only: no build step, no bundler, no framework. The UI is plain files served from `ui/`.
+- Checks: `node --check <file>` on every edited `.mjs`/`.js`; `node apply.mjs selftest` checks LinkedIn can be read.
+- Never start a real run while working on the UI ("Run now" submits real applications). Stub `/api/run` in the browser, or use
+  `node apply.mjs run --dry-run --limit 2`. Any test that filters or processes job applications uses at most 5.
+- Click through every screen touched (and the shell) in Mocha and Latte, at desktop and phone width, with the console open.
+
+## Folder map
+| Path | What |
+|---|---|
+| `server.mjs` | HTTP server: `/api/*` routes, `/pdf`, and static files from `ui/` |
+| `apply.mjs` | CLI entry (`run`, `login`, `library`, `review`, `github`, `selftest`, `doctor`) |
+| `pipeline.mjs` `linkedin.mjs` `llm.mjs` | daily run, LinkedIn DOM logic, Claude calls |
+| `store.mjs` `config.mjs` | records, CSV log and run status; settings/profile loading |
+| `library.mjs` `market.mjs` `github.mjs` `doctor.mjs` `resume_pdf.mjs` | ready resumes, market review, GitHub review, self-repair, PDF rendering |
+| `ui/index.html` | shell markup (top bar), loads the CSS and `js/main.js` |
+| `ui/styles/` | `tokens.css` (generated), `components.css` (design-system bundle, copy), `app.css` (canvas helpers + shell), `legacy.css` (old screens) |
+| `ui/js/` | `main.js` boot · `api.js` every server call · `state.js` data + view state · `router.js` sections · `shell.js` top bar · `actions.js` all `data-action` handlers · `theme.js` · `util.js` · `legacy.js` old widgets |
+| `ui/js/components/` | `score-ring` `status-pill` `tag` `list-row` `card` (+ callout) `sheet` |
+| `ui/js/screens/` | one file per screen (table below) |
+| `design/` | `tokens.json` (from the design system) and `gen-tokens.mjs` → `ui/styles/tokens.css` |
+
+## Data files (all git-ignored)
+- `data/applications/<site>-<id>.json`, one per job: `title company location url status statusReason createdAt submittedAt description field easyApply externalUrl postedAt applicants`,
+  `ats{best_score best_file summary resumes[{file ats_score matched_keywords missing_keywords reasoning}] recommendations github_projects}`,
+  `tailored{used score baseScore file path baseFile basePath pass uploaded resume{changes not_added github_added}}`,
+  `steps[{fields[{label value source confidence reasoning}]}]`, `warnings`, `usage{costUsd …}`, `archived{at reason}`.
+- `applications.csv`: tab-separated activity log `date site status id title company url reason`.
+- `data/settings.json`: `applyMode dailyJobs dailyApplyLimit scheduleEnabled scheduleTime modelDaily modelWeekly minAtsScore tailorTarget postedWithin tailorMaxPasses maxRunMinutes claudePath …` (defaults in `config.mjs`).
+- `data/profile.json`: `name goalsText preferences locations workplace seniority targets[{field searchTerms why}] titleExclude companyExclude facts githubUser onboardedAt`.
+- `data/runs/current.json` (live run: `phase detail counts events anomalies pid`), `data/runs/<id>.json` (finished: `outcome{summary stop} selection`), `*.log` task logs.
+- `data/market/review.json` (`review{headline verdict_points segments strengths gaps todo resume_fixes stop_doing}`, `stats`), `todo_state.json` (`title → doneAt`), `keyword_audit.json`.
+- `data/github/repos.json` (`user fetchedAt repos`), `data/github/review.json` (`repo → review`); `data/library/` ready resumes; `data/tailored/` tailored PDFs;
+  `data/doctor/<id>.json` reports + `backups/`; `resumes/` uploads; `browser_profile/` LinkedIn sign-in.
+- Status words and tones live in `ui/js/components/status-pill.js` (`STATUS`); never show raw names like `resume_insufficient`.
+
+## UI rules
+- Tokens only: every color, font, space, radius and shadow is a `var(--…)` from `tokens.css`. No hard-coded colors (no hex, rgb, or named colors) in CSS or JS.
+- Use the design system's `jp-` classes (`components.css`) and the canvas helpers in `app.css`; new shared pieces go in `js/components/`.
+- Status always pairs color with a word (`statusPill`, `jp-callout` with text). Never color alone.
+- One primary action (`jp-btn--primary`) per region; others are default, tinted or plain.
+- Theme: Mocha (`.jp-mocha`) by default, Latte (`.jp-latte`) on `<html>`; follows the system until the user flips the switch in More.
+- No emoji in new UI; icons are the 1.5px line set in `util.js` `icon()`. Sentence case. Text from the user's side.
+- Keep each file under ~300 lines. Screens render into `#view`; re-render through `app.render()`; all server calls via `api.js`.
+- Old screens still use `legacy.css` / `legacy.js` (scoped under `.legacy` on `#view`). When a stage rebuilds a screen, move it to jp- markup
+  and delete the legacy CSS/helpers nothing uses any more. After editing tokens.json, run `node design/gen-tokens.mjs`.
+- After adding new files under `ui/`, nothing else is needed: the server serves them and the doctor backs up all of `ui/`.
+
+## Screens → files → canvas boards
+Canvas: https://claude.ai/artifact/QN4L8Dp21549eHZrEzfudZ (boards are `project/<Board>.dc.html`; read only the ones the task needs).
+Design system: https://claude.ai/code/artifact/bd77b878-3e00-4d29-b225-02ce02531311 (`project/README.md`, `tokens.json`, `components/bundle.css`).
+
+| Screen | File(s) | Canvas board(s) |
+|---|---|---|
+| Shell: top bar, run status, Ask Claude, More | `index.html`, `js/shell.js`, `components/sheet.js` | Main (top bar), A-Ask, B-Guidance (Ask Claude slide-over) |
+| Jobs (list + detail) | `screens/jobs.js`, `screens/job-detail.js` | Main, A-Latte, A-Posting, A-Group, JobDetail |
+| Job statuses and problem states | `screens/jobs.js`, `components/status-pill.js` | Jobs-Applied, Jobs-Approve, Jobs-LoggedOut, Jobs-RunFailed, Jobs-Limited, Jobs-FirstDay |
+| Guidance | `screens/guidance.js` (placeholder) | Guidance, Guidance-Interview |
+| Resumes | `screens/resumes.js` | Resumes, Resumes-Original, Resumes-Answers, Resumes-Reupload, Resumes-Upload, Resumes-Latte |
+| Insights (now: Overview + GitHub review) | `screens/insights.js`, `screens/overview.js`, `screens/github.js` | Insights, Insights-Todo, Insights-Gaps, Insights-Market, Insights-GitHub, Insights-Latte, Insights-Latte-Todo |
+| Settings | `screens/settings.js` | Settings, Settings-Applying, -Review, -Never, -Latte, -Schedule, -Notifications, -Privacy, -Usage |
+| Onboarding | `screens/onboarding.js` | Onboarding, Onboarding-Profile |
+| Activity | `screens/activity.js` | Activity, Activity-Stopped |
+| Doctor | `screens/doctor.js` | Doctor |
+
+B-Board, C-Grid and C-Sheet are alternative layouts (sidebar, dock): reference only, not the chosen shell.
+
+## Stage plan
+0. **Foundation** (done): `ui/` structure, tokens, components, shell from Main; old screens mounted unchanged.
+1. **Jobs**: rebuild list + detail in jp- markup (Main, A-*, JobDetail): grouping menu, filters, score rings, posting and Ask panels.
+2. **Job statuses**: the new statuses (waiting for your OK, viewed, interview, rejected, no reply) and the problem states (Jobs-* boards). Needs server/record support.
+3. **Resumes**: originals, tailored, standard answers, upload and re-upload checks.
+4. **Insights**: tabs Pipeline, To-do, Skill gaps, Job market, GitHub (replaces overview.js / github.js).
+5. **Guidance**: coach chat and mock interview; wire Ask Claude for real.
+6. **Settings + Onboarding**: search profiles, applying, never-apply list, schedule, notifications, privacy, usage; onboarding steps.
+7. **Activity + Doctor**: run history with stopped runs, doctor checks.
+
+Each stage: read only its boards, keep behavior working, delete the legacy code it replaces, check both themes, commit "Stage N: …".

@@ -11,8 +11,11 @@ import { ask } from "./llm.mjs";
 const DOC_DIR = path.join(DATA, "doctor");
 const BACKUPS = path.join(DOC_DIR, "backups");
 // What the doctor may change (and what gets backed up). User data (records, resumes, tailored PDFs) is never touched.
+const walkFiles = (d) => !fs.existsSync(d) ? [] : fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walkFiles(path.join(d, e.name)) : [path.join(d, e.name)]);
+const UI_FILES = () => walkFiles(path.join(DIR, "ui")).map((f) => path.relative(DIR, f));
 const APP_FILES = () => [
   ...fs.readdirSync(DIR).filter((f) => /\.(mjs|html|cmd|ps1|vbs|json)$/i.test(f) && !/^package-lock/.test(f)),
+  ...UI_FILES(),
   "data/settings.json", "data/profile.json",
 ].filter((f) => fs.existsSync(path.join(DIR, f)));
 
@@ -33,7 +36,7 @@ export function restoreBackup(id) {
   for (const f of walk(src)) fs.copyFileSync(f, path.join(DIR, path.relative(src, f)));
   return true;
 }
-const syntaxErrors = () => fs.readdirSync(DIR).filter((f) => f.endsWith(".mjs")).flatMap((f) => {
+const syntaxErrors = () => [...fs.readdirSync(DIR).filter((f) => f.endsWith(".mjs")), ...UI_FILES().filter((f) => f.endsWith(".js"))].flatMap((f) => {
   try { execFileSync(process.execPath, ["--check", path.join(DIR, f)], { stdio: "pipe" }); return []; }
   catch (e) { return [`${f}: ${String(e.stderr || e.message).split("\n").slice(0, 3).join(" ")}`]; }
 });
@@ -56,7 +59,7 @@ App map (all in the current directory):
 - config.mjs (settings/profile loader; user data in data/settings.json and data/profile.json)
 - linkedin.mjs (all LinkedIn DOM logic: search cards, job page, Easy Apply form, text patterns in LI)
 - pipeline.mjs (daily run), store.mjs (records/log/run status), llm.mjs (Claude calls), library.mjs, market.mjs, github.mjs, resume_pdf.mjs
-- server.mjs + ui.html (the app), apply.mjs (command line entry), Install.cmd / install.ps1 (installer)
+- server.mjs + ui/ (the app: ui/index.html, ui/js/**/*.js ES modules, ui/styles/*.css; see CLAUDE.md), apply.mjs (command line entry), Install.cmd / install.ps1 (installer)
 - Logs: data/runs/current.json and data/runs/*.json (run status, events, anomalies), data/install.log, applications.csv
 
 Rules:

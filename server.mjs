@@ -108,8 +108,18 @@ const body = (req) => new Promise((resolve, reject) => {
   req.on("end", () => { try { resolve(b ? JSON.parse(b) : {}); } catch (e) { reject(e); } });
 });
 
+// The UI: plain files under ui/ (native ES modules, no build step)
+const UI_DIR = path.join(DIR, "ui");
+const MIME = { ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".html": "text/html; charset=utf-8", ".svg": "image/svg+xml", ".json": "application/json" };
+function uiFile(res, pathname) {
+  let file; try { file = path.resolve(UI_DIR, "." + decodeURIComponent(pathname)); } catch { return false; }
+  if (!file.startsWith(UI_DIR + path.sep) || !MIME[path.extname(file)] || !fs.existsSync(file)) return false;
+  send(res, 200, MIME[path.extname(file)], fs.readFileSync(file));
+  return true;
+}
+
 const routes = {
-  "GET /": (req, res) => send(res, 200, "text/html; charset=utf-8", fs.readFileSync(path.join(DIR, "ui.html"))),
+  "GET /": (req, res) => send(res, 200, "text/html; charset=utf-8", fs.readFileSync(path.join(UI_DIR, "index.html"))),
   "GET /api/state": async (req, res, url) => {
     if (!claudeCache || url.searchParams.has("recheck")) claudeCache = await claudeInfo();
     json(res, {
@@ -252,7 +262,7 @@ const routes = {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const h = routes[`${req.method} ${url.pathname}`];
-  if (!h) return send(res, 404, "text/plain", "Not found");
+  if (!h) return (req.method === "GET" && uiFile(res, url.pathname)) || send(res, 404, "text/plain", "Not found");
   try { await h(req, res, url); } catch (e) { json(res, { error: e.message }, 500); }
 });
 server.on("error", (e) => {
