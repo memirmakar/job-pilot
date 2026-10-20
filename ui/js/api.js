@@ -20,6 +20,8 @@ export const getGithub = () => read("/api/github");             // { user, fetch
 export const getLibrary = () => read("/api/library");           // { entries, due }
 export const getDoctor = () => read("/api/doctor");             // doctor reports
 export const getRuns = () => read("/api/runs");                 // last 30 finished runs (no events)
+export const getActivity = () => read("/api/activity");         // every run with its jobs (activity.mjs)
+export const getChecks = () => read("/api/doctor/checks");      // doctor health checks (doctor_checks.mjs)
 export const getResumes = () => read("/api/resumes/all");        // { originals, ready, tailored, answers, fields }
 export const getConversation = (site, id) => call(`/api/conversation?site=${encodeURIComponent(site)}&id=${encodeURIComponent(id)}`); // { messages[] }
 
@@ -31,7 +33,8 @@ export const startRun = (opts = {}) => call("/api/run", opts);  // { dryRun?, li
 export const stopRun = () => call("/api/run/stop", {});
 export const startTask = (name) => call("/api/task", { name }); // library | review | github | selftest
 export const askDoctor = (problem) => call("/api/doctor", { problem });
-export const restoreDoctor = (id) => call("/api/doctor/restore", { id });
+export const undoDoctor = (id) => call("/api/doctor/undo", { id }); // puts back the files one fix changed
+export const checkLinkedin = () => call("/api/doctor/linkedin", {}); // one LinkedIn page in a hidden window: { loggedIn limited error }
 
 // ----- data changes -----
 export const uploadResumes = (files) => call("/api/resumes", { files }); // [{ name, data (base64) }]

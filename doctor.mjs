@@ -60,6 +60,7 @@ App map (all in the current directory):
 - linkedin.mjs (all LinkedIn DOM logic: search cards, job page, Easy Apply form, text patterns in LI)
 - pipeline.mjs (daily run), store.mjs (records/log/run status), llm.mjs (Claude calls), library.mjs, market.mjs, github.mjs, resume_pdf.mjs
 - easy_apply.mjs (Easy Apply form: submit, hold, send approved), linkedin_guard.mjs (signed-out / limit page checks), applied_sync.mjs (LinkedIn job tracker reader), approval.mjs + statuses.mjs (Waiting for your OK, status history)
+- activity.mjs, doctor_checks.mjs, activity_routes.mjs (Activity and Doctor screen data, read only)
 - server.mjs + ui/ (the app: ui/index.html, ui/js/**/*.js ES modules, ui/styles/*.css; see CLAUDE.md), apply.mjs (command line entry), Install.cmd / install.ps1 (installer)
 - Logs: data/runs/current.json and data/runs/*.json (run status, events, anomalies), data/install.log, applications.csv
 
@@ -104,7 +105,30 @@ export async function runDoctor({ reason, context = "" }) {
 export function doctorReports() {
   if (!fs.existsSync(DOC_DIR)) return [];
   return fs.readdirSync(DOC_DIR).filter((f) => f.endsWith(".json")).map((f) => { try { return JSON.parse(fs.readFileSync(path.join(DOC_DIR, f), "utf8")); } catch { return null; } })
-    .filter(Boolean).sort((a, b) => b.id.localeCompare(a.id));
+    .filter((r) => r?.id).sort((a, b) => b.id.localeCompare(a.id));
+}
+
+// How many files the backup before a report holds (shown in the fix history)
+export const backupCount = (id) => walkFiles(path.join(BACKUPS, path.basename(String(id)))).length;
+
+// Undo one report's fix: put back only the files it changed, from the backup made before it (files the fix created are
+// moved to backups/<id>-undone/, never deleted). Marks the report undone; a syntax error afterwards is reported, not hidden.
+export function undoReport(id) {
+  const f = path.join(DOC_DIR, `${path.basename(String(id))}.json`), rep = JSON.parse(fs.readFileSync(f, "utf8"));
+  if (rep.undoneAt) throw new Error("These changes were already undone");
+  if (rep.rolledBack || !rep.changedFiles?.length) throw new Error("This report changed no files");
+  const src = path.join(BACKUPS, rep.id), aside = path.join(BACKUPS, `${rep.id}-undone`);
+  if (!fs.existsSync(src)) throw new Error("The backup for this fix is missing");
+  const done = [];
+  for (const file of rep.changedFiles) {
+    const from = path.join(src, file), to = path.resolve(DIR, file);
+    if (!to.startsWith(DIR + path.sep)) continue;
+    if (fs.existsSync(from)) { fs.mkdirSync(path.dirname(to), { recursive: true }); fs.copyFileSync(from, to); done.push(file); }
+    else if (fs.existsSync(to)) { fs.mkdirSync(path.dirname(path.join(aside, file)), { recursive: true }); fs.renameSync(to, path.join(aside, file)); done.push(file); }
+  }
+  Object.assign(rep, { undoneAt: new Date().toISOString(), undoneFiles: done, undoErrors: syntaxErrors() });
+  fs.writeFileSync(f, JSON.stringify(rep, null, 2));
+  return rep;
 }
 
 // The automatic doctor runs at most once per day per problem kind, so a persistent issue doesn't burn usage.

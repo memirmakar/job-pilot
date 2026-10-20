@@ -42,14 +42,6 @@
 .legacy .check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; user-select: none; }
 .legacy .check input { width: 16px; height: 16px; accent-color: var(--accent); }
 
-/* ---------- status filter capsules (Activity) ---------- */
-.legacy .filters { display: flex; flex-wrap: wrap; gap: 6px; }
-.legacy .filters button { border: 1px solid var(--control-border); background: transparent; color: var(--text-secondary); border-radius: var(--radius-pill); padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; }
-.legacy .filters button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.legacy table.log { width: 100%; border-collapse: collapse; font-size: 13px; }
-.legacy table.log th { text-align: left; color: var(--text-tertiary); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--separator); position: sticky; top: 0; background: var(--surface); }
-.legacy table.log td { padding: 8px 10px; border-bottom: 1px solid var(--separator); vertical-align: top; }
-.legacy table.log tr:hover td { background: var(--surface-hover); }
 
 /* ---------- buttons & forms ---------- */
 .legacy .btn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--fill); color: var(--text); font: 600 13px/1 var(--font-sans);

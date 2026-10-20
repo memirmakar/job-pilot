@@ -103,8 +103,8 @@ Design system: https://claude.ai/code/artifact/bd77b878-3e00-4d29-b225-02ce02531
 | Insights | `screens/insights/`: `index.js` (header, tabs, actions) `model.js` (data → words; `todoFor()` feeds the Jobs raise card) `pipeline.js` `todo.js` `gaps.js` `market.js` `github.js`; `styles/insights.css` | Insights, Insights-Todo, Insights-Gaps, Insights-Market, Insights-GitHub, Insights-Latte, Insights-Latte-Todo |
 | Settings | `screens/settings.js` | Settings, Settings-Applying, -Review, -Never, -Latte, -Schedule, -Notifications, -Privacy, -Usage |
 | Onboarding | `screens/onboarding.js` | Onboarding, Onboarding-Profile |
-| Activity | `screens/activity.js` | Activity, Activity-Stopped |
-| Doctor | `screens/doctor.js` | Doctor |
+| Activity | `screens/activity/`: `index.js` (screen, actions, loads `/api/activity`) `model.js` (runs → words, skip reasons) `view.js`; `styles/activity.css`; server `activity.mjs` (runs + `applications.csv` rows + records; log rows before run files are "From the log" runs) via `activity_routes.mjs` | Activity, Activity-Stopped |
+| Doctor | `screens/doctor/`: `index.js` (screen, actions) `checks.js` (health checks → words) `history.js` (Ask the doctor, fix history, Undo); `styles/activity.css`; server `doctor_checks.mjs` (read-only checks; LinkedIn = one feed visit, saved to `data/doctor/linkedin_check.json`), `doctor.mjs` `undoReport()` (puts back only a report's `changedFiles`, sets `undoneAt`) | Doctor |
 
 B-Board, C-Grid and C-Sheet are alternative layouts (sidebar, dock): reference only, not the chosen shell.
 
@@ -116,6 +116,6 @@ B-Board, C-Grid and C-Sheet are alternative layouts (sidebar, dock): reference o
 4. **Insights** (done): tabs Pipeline, To-do (merged steps, done → re-score next run, "Add to my to-do list" on the Jobs raise card), Skill gaps, Job market (snapshots per run), GitHub.
 5. **Guidance**: coach chat and mock interview; wire Ask Claude for real.
 6. **Settings + Onboarding**: search profiles, applying, never-apply list, schedule, notifications, privacy, usage; onboarding steps.
-7. **Activity + Doctor**: run history with stopped runs, doctor checks.
+7. **Activity + Doctor** (done): run history with stopped runs and per-job reasons, doctor health checks, fix history with Undo, Ask the doctor.
 
 Each stage: read only its boards, keep behavior working, delete the legacy code it replaces, check both themes, commit "Stage N: …".
