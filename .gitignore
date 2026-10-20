@@ -1,0 +1,7 @@
+data/
+resumes/
+browser_profile/
+node_modules/
+applications.csv
+run.log
+.claude/

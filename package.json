@@ -1,0 +1,14 @@
+{
+  "name": "job-auto-apply",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "login": "node apply.mjs login",
+    "start": "node apply.mjs run all",
+    "linkedin": "node apply.mjs run linkedin",
+    "kariyer": "node apply.mjs run kariyer"
+  },
+  "dependencies": {
+    "playwright": "^1.55.0"
+  }
+}

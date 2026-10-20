@@ -1,0 +1,56 @@
+# Job Pilot
+
+Job Pilot finds jobs that fit you on LinkedIn every day and tailors your resume for each one. It applies where it can and explains every decision in a local app.
+It runs on Windows and uses **your own Claude Code** subscription for all the thinking.
+
+## Install (no terminal needed)
+1. Install the **Claude Code CLI** from https://claude.com/claude-code.
+2. Double-click **`Install.cmd`**. It installs Node.js if needed, sets up the app, and creates a **Job Pilot** shortcut on your Desktop and in the Start menu.
+3. Job Pilot opens in your browser and walks you through setup:
+   1. **Claude:** checks the CLI and helps you sign in.
+   2. **Resumes:** upload one or more (PDF works best). They're the only source of facts, and Claude never invents experience.
+   3. **Goals:** what you want to work on, where (cities, countries or remote), your seniority, your GitHub username, and anything employers may ask.
+   4. **Your plan:** Claude turns that into target fields and LinkedIn searches, including local-language job titles. You can edit everything.
+   5. **LinkedIn:** sign in once, in Job Pilot's own Edge profile.
+   6. **Schedule:** the daily time, how many jobs a day, and whether to submit Easy Apply jobs automatically.
+
+If setup fails, the installer offers to let Claude diagnose and fix the problem.
+
+## What happens every day
+1. **Search:** every target field × search × location, covering both Easy Apply and external listings.
+2. **Pick:** Claude chooses up to **20** (configurable) of the best new matches for your goals and seniority.
+3. **Analyze each one:** it reads the posting, including **when it was published**, and scores your resumes against it.
+4. **Tailor:** Claude rewrites the best resume for the posting, truthfully. It renders a PDF, re-scores it, and does a second pass if needed.
+5. **Apply:**
+   - **Easy Apply jobs** are submitted with the tailored resume, and Claude answers the form questions.
+   - **External jobs** are marked "Apply externally", with the tailored resume ready to download.
+6. **Archive:** listings that have closed are archived. Nothing is deleted: the analysis and tailored resume stay.
+7. **Upkeep:** the GitHub review refreshes every 4 days, the market review and to-do list every 3 days, and the **ready resumes** weekly.
+
+## Ready resumes
+Job Pilot keeps **one ready resume per target field** under Resumes, so you have the right one for external applications.
+Claude rebuilds them weekly, or sooner when you upload a resume, change your fields, or your GitHub changes.
+
+## The doctor
+When something goes wrong, Claude can diagnose it and fix settings or the app's own code. Examples: a run finds no listings, LinkedIn changes its layout, or errors repeat.
+Every file is backed up first. Any change that breaks the app is undone automatically, and you can undo any fix from the **Doctor** page.
+It runs by itself at most once a day per problem. You can also ask it from the Doctor page.
+
+## Where things are
+| | |
+|---|---|
+| `resumes/` | your uploaded resumes |
+| `data/library/` | ready resumes per field |
+| `data/tailored/` | the tailored resume for each job |
+| `data/applications/` | everything about each job: scores, answers, reasoning, archive status |
+| `data/profile.json`, `data/settings.json` | your setup (edit them from Settings) |
+| `data/doctor/` | doctor reports and backups |
+| `browser_profile/` | Job Pilot's Edge profile with your LinkedIn sign-in |
+
+To give Job Pilot to someone else, copy the folder **without** `data/`, `resumes/`, `browser_profile/`, `node_modules/` and `applications.csv`. They then run `Install.cmd`.
+
+## Good to know
+- **LinkedIn's terms don't allow automated applying,** and accounts that apply too much too fast can be restricted. Keep the daily numbers modest.
+- **The daily run needs your PC on and you logged in to Windows.** If the PC was asleep, the run starts as soon as it wakes.
+- **Plan usage:** every job uses a few Claude calls. Balanced mode (Sonnet daily, Opus weekly) keeps that manageable. When your plan's limit is reached, the run stops cleanly and continues next time.
+- **Advanced:** `node apply.mjs run --dry-run --limit 2` runs a test from a terminal. `node apply.mjs selftest` checks LinkedIn can be read.
