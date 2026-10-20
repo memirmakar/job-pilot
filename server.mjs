@@ -7,6 +7,7 @@ import { spawn, execFile } from "node:child_process";
 import { DIR, DATA, loadSettings, loadProfile, saveSettings, saveProfile, isOnboarded, DEFAULT_SETTINGS } from "./config.mjs";
 import { resumeRoutes } from "./resume_routes.mjs";
 import { statusRoutes } from "./status_routes.mjs";
+import { activityRoutes } from "./activity_routes.mjs";
 import { stage } from "./reupload.mjs";
 import { archiveOriginal } from "./resumes.mjs";
 
@@ -148,7 +149,6 @@ const routes = {
     json(res, { user: repos?.user, fetchedAt: repos?.fetchedAt, repos: (repos?.repos || []).map(({ readme, files, ...r }) => ({ ...r, review: reviews[r.name] || null })) });
   },
   "GET /api/library": async (req, res) => { const L = await fresh("library.mjs"); json(res, { entries: L.libraryEntries(), due: L.libraryDue() }); },
-  "GET /api/doctor": async (req, res) => { const D = await fresh("doctor.mjs"); json(res, D.doctorReports()); },
   "GET /api/runs": (req, res) => json(res, fs.readdirSync(RUNS_DIR).filter((f) => /^\d{4}-.*\.json$/.test(f)).sort().reverse().slice(0, 30).map((f) => {
     const r = readJson(path.join(RUNS_DIR, f)); if (r) delete r.events; return r;
   }).filter(Boolean)),
@@ -225,15 +225,6 @@ const routes = {
     if (!map[name]) return json(res, { error: "unknown task" }, 400);
     try { json(res, startTask(name, map[name])); } catch (e) { json(res, { error: e.message }, 409); }
   },
-  "POST /api/doctor": async (req, res) => {
-    const { problem } = await body(req);
-    try { json(res, startTask("doctor", ["doctor", problem || "The user asked for a check-up from the app"])); } catch (e) { json(res, { error: e.message }, 409); }
-  },
-  "POST /api/doctor/restore": async (req, res) => {
-    const { id } = await body(req);
-    const D = await fresh("doctor.mjs");
-    try { D.restoreBackup(id); json(res, { ok: true }); } catch (e) { json(res, { error: e.message }, 400); }
-  },
   "POST /api/login/linkedin": (req, res) => { try { json(res, startTask("login", ["login"])); } catch (e) { json(res, { error: e.message }, 409); } },
   "POST /api/login/claude": async (req, res) => {
     const { findClaude } = await fresh("llm.mjs");
@@ -279,7 +270,8 @@ const routes = {
   "POST /api/quit":(req, res) => { json(res, { ok: true }); setTimeout(() => process.exit(0), 300); },
 };
 
-Object.assign(routes, resumeRoutes({ body, json }), statusRoutes({ body, json, startTask, running: () => runState().running }));
+Object.assign(routes, resumeRoutes({ body, json }), statusRoutes({ body, json, startTask, running: () => runState().running }),
+  activityRoutes({ body, json, startTask, browserBusy: () => runState().running || !!(tasks.login && alive(tasks.login.pid)) }));
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);

@@ -5,8 +5,8 @@ import { renderJobs } from "./screens/jobs/index.js";
 import { renderGuidance } from "./screens/guidance.js";
 import { renderResumes } from "./screens/resumes/index.js";
 import { renderInsights } from "./screens/insights.js";
-import { renderLog } from "./screens/activity.js";
-import { renderDoctor } from "./screens/doctor.js";
+import { renderActivity } from "./screens/activity/index.js";
+import { renderDoctor } from "./screens/doctor/index.js";
 import { renderSettings } from "./screens/settings.js";
 import { renderOnboarding } from "./screens/onboarding.js";
 
@@ -16,12 +16,12 @@ export const SECTIONS = [["jobs", "Jobs"], ["guidance", "Guidance"], ["resumes",
 export const MORE = [["activity", "Activity"], ["doctor", "Doctor"], ["settings", "Settings"]];
 
 const SCREENS = { jobs: renderJobs, guidance: renderGuidance, resumes: renderResumes, insights: renderInsights,
-  activity: renderLog, doctor: renderDoctor, settings: renderSettings };
+  activity: renderActivity, doctor: renderDoctor, settings: renderSettings };
 const ALIAS = { apps: "jobs", overview: "insights", log: "activity", github: "insights/github" };
 // Never re-render these underneath the user while they type
 export const FORM_VIEWS = new Set(["settings", "onboarding"]);
 // Screens rebuilt in jp- markup; the rest still render inside .legacy
-const REBUILT = new Set(["jobs", "resumes"]);
+const REBUILT = new Set(["jobs", "resumes", "activity", "doctor"]);
 
 // "insights/github" -> view "insights", sub "github"
 export function parse(hash) {

@@ -9,14 +9,14 @@ import { renderSettings, targetRows, readTargets } from "./screens/settings.js";
 import { renderOnboarding, obNext, OB } from "./screens/onboarding.js";
 import { JOB_ACTIONS, bindJobs } from "./screens/jobs/index.js";
 import { RES_ACTIONS, bindResumes } from "./screens/resumes/index.js";
+import { ACT_ACTIONS } from "./screens/activity/index.js";
+import { DOC_ACTIONS } from "./screens/doctor/index.js";
 
 const ACTIONS = {
   run: async () => { await api.startRun({}); toast("Run started. You'll see an Edge window working; leave it open."); await loadState(); },
   "dry-run": async () => { await api.startRun({ dryRun: true, limit: 2 }); toast("Test run started on 2 jobs. Nothing will be submitted."); await loadState(); },
   stop: async () => { await api.stopRun(); toast("Stopping the run…"); setTimeout(app.load, 1500); },
   task: async (el) => { await api.startTask(el.dataset.task); toast(`${el.dataset.task} started`); await loadState(); app.render(); },
-  doctor: async () => { await api.askDoctor($("#doc-problem")?.value || ""); toast("Claude is checking the app. This can take several minutes."); await loadState(); app.render(); },
-  restore: async (el) => { if (!confirm("Undo the doctor's changes from this report?")) return; await api.restoreDoctor(el.dataset.id); toast("Changes undone."); app.load(); },
   recheck: async () => { toast("Checking Claude…"); await loadState(true); app.render(); },
   "claude-login": async () => { await api.loginClaude(); toast("A Claude window opened: type /login, finish in your browser, close it, then press Check again.", 9000); },
   "linkedin-login": async () => { await api.loginLinkedin(); toast("An Edge window opened. Sign in to LinkedIn, then close it.", 8000); },
@@ -58,6 +58,9 @@ const ACTIONS = {
   ...JOB_ACTIONS,
   // resumes screen
   ...RES_ACTIONS,
+  // activity and doctor screens
+  ...ACT_ACTIONS,
+  ...DOC_ACTIONS,
 };
 
 export function bindEvents() {

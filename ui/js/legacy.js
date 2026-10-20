@@ -1,12 +1,9 @@
 // Widgets of the pre-rebuild screens (styled by styles/legacy.css). Stages replace them with components/; delete what is unused.
 import { esc } from "./util.js";
-import { STATUS } from "./components/status-pill.js";
 
 export const usd = (u) => u?.costUsd ?? 0;
 export const finalScore = (r) => r.tailored?.used ? r.tailored.score : r.ats?.best_score;
 
-const OLD = { success: "p-good", warning: "p-warn", serious: "p-serious", danger: "p-bad", neutral: "p-neutral", accent: "p-accent", info: "p-info" };
-export const pill = (s) => { const [l, t] = STATUS[s] || [s, "neutral"]; return `<span class="pill ${OLD[t]}">${esc(l)}</span>`; };
 const LEVEL = { high: "p-good", medium: "p-warn", low: "p-neutral", strong: "p-good", moderate: "p-warn", weak: "p-bad" };
 export const lvl = (v, prefix = "") => `<span class="pill ${LEVEL[v] || "p-neutral"}">${esc(prefix + v)}</span>`;
 export const VERDICT = { real_value: ["Real value", "p-good"], moderate: ["Moderate", "p-warn"], ats_padding: ["ATS padding only", "p-bad"], not_relevant: ["Not relevant", "p-neutral"] };
