@@ -9,6 +9,8 @@ import { OB, renderOnboarding } from "./screens/onboarding.js";
 applyTheme();
 watchSystem(renderMenu);
 Object.assign(S, parse(location.hash.slice(1)));
+// #guidance/<conversation id> opens that conversation
+if (S.view === "guidance" && S.sub) { S.g.sel = S.sub; S.g.open = true; S.sub = "pipeline"; }
 if (!S.sub) S.sub = "overview";
 bindEvents();
 

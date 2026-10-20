@@ -1,0 +1,159 @@
+/* Guidance screen (canvas boards Guidance, Guidance-Interview). Tokens only: no hard-coded colors. */
+
+.gd { display: flex; gap: var(--space-6); height: calc(100dvh - 56px - 2 * var(--space-6)); min-height: 560px; }
+
+/* ---------- left: conversations ---------- */
+.gd-list { width: 284px; flex: none; display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; }
+.gd-list__head { display: flex; align-items: center; justify-content: space-between; }
+.gd-list__box { flex: 1; min-height: 0; overflow: auto; }
+.gd-list__empty { margin: 0; padding: 16px 14px; }
+.gd-group { padding: 14px 14px 6px; }
+.gd-row { grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 10px 14px; align-items: start; }
+.gd-badge { width: 32px; height: 32px; border-radius: var(--radius-sm); background: var(--fill); display: grid; place-items: center;
+  font: 600 13px/1 var(--font-mono); color: var(--text); }
+.gd-badge .ico { color: var(--text-secondary); }
+.gd-row__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.gd-row__title { font-size: 14px; line-height: 19px; }
+.gd-row__badge { align-self: flex-start; margin-top: 5px; }
+
+/* ---------- center: chat ---------- */
+.gd-chat { flex: 1; min-width: 0; padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.gd-chat--empty { align-items: center; justify-content: center; }
+.gd-head { flex: none; display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--separator); }
+.gd-head__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gd-head__tools { display: flex; align-items: center; gap: 8px; flex: none; }
+.gd-back { display: none; }
+.gd-live { display: flex; align-items: center; gap: 8px; }
+.gd-timer { display: inline-flex; align-items: center; gap: 6px; }
+.gd-timer .jp-num { color: var(--text); }
+.gd-log { flex: 1; min-height: 0; overflow: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.gd-log > p { margin: 0; }
+.gd-earlier { align-self: center; }
+.gd-muted { color: var(--text-secondary); }
+.gd-note { text-align: center; }
+.gd-q { margin-top: 4px; }
+.gd-skip { align-self: flex-end; margin: 0; }
+.gd-answer { display: flex; flex-direction: column; gap: 8px; max-width: 92%; }
+.gd-answer > .foot { margin: 0; }
+
+/* Claude's text: paragraphs, bullets, links that open things in the app */
+.coach-text { display: flex; flex-direction: column; gap: 6px; }
+.coach-text p { margin: 0; }
+.coach-text ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+.coach-link { color: var(--link); font-weight: 500; text-decoration: none; }
+.coach-link:hover { text-decoration: underline; }
+.coach-link:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+.bubble--me .coach-link { color: inherit; text-decoration: underline; }
+
+/* Weekly check-in and interview summary cards */
+.gd-checkin { padding: 14px 16px; border-radius: var(--radius-lg); background: var(--mantle); display: flex; flex-direction: column; gap: 8px; }
+.gd-checkin__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gd-checkin__title { font: 600 14px/20px var(--font-sans); }
+.gd-checkin__stats { margin: 0; }
+.gd-checkin__stats .jp-num { color: var(--text); }
+.gd-mark { width: 18px; height: 18px; border-radius: 5px; }
+.gd-mark--sm { width: 14px; height: 14px; border-radius: 4px; }
+.gd-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.gd-sum ul { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+
+/* Action buttons and drafts at the end of an answer */
+.gd-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 2px; }
+.gd-actions__hint { flex-basis: 100%; }
+/* default buttons on a mantle card or a fill bubble would vanish into it */
+.gd-actions .jp-btn:not(.jp-btn--tinted):not(.jp-btn--primary), .gd-draft .jp-btn:not(.jp-btn--tinted) { background: var(--surface); }
+.gd-actions .jp-btn:not(.jp-btn--tinted):not(.jp-btn--primary):hover { background: var(--surface-hover); }
+.gd-draft { padding: 12px 14px; border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
+.gd-draft__text { margin: 0; font: 400 14px/20px var(--font-sans); white-space: pre-wrap; user-select: text; }
+.gd-draft__foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Mock interview feedback */
+.gd-feedback { padding: 14px 16px; border-radius: var(--radius-lg); background: var(--mantle); display: flex; flex-direction: column; gap: 10px; }
+.gd-feedback__cap { display: flex; align-items: center; gap: 8px; }
+.gd-feedback__grid { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px 12px; align-items: start; }
+.gd-prog { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--mantle); }
+.gd-prog > .foot { white-space: nowrap; }
+.gd-prog .jp-num { color: var(--text); }
+.gd-prog__bars { flex: 1; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; }
+.gd-prog__bar { height: 4px; border-radius: var(--radius-pill); background: var(--chart-track); }
+.gd-prog__bar.is-on { background: var(--accent); }
+
+/* Thinking state */
+.gd-thinking { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); }
+.gd-dots { display: inline-flex; gap: 3px; }
+.gd-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--text-tertiary); animation: gd-blink 1.2s infinite ease-in-out; }
+.gd-dots i:nth-child(2) { animation-delay: .15s; } .gd-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes gd-blink { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gd-dots i { animation: none; opacity: .7; } }
+.gd-wait { display: flex; align-items: center; gap: 10px; }
+
+.gd-empty { margin: auto 0; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.gd-empty p { margin: 0; }
+.gd-suggest { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.gd-suggest .chip { height: auto; min-height: 30px; padding: 6px 12px; line-height: 18px; white-space: normal; text-align: left; }
+
+/* Composer */
+.gd-form { flex: none; padding: 12px 16px 16px 20px; display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--separator); }
+.gd-form__field { flex: 1; min-width: 0; }
+.gd-form .jp-btn--primary { height: 38px; }
+.gd-form--iv { flex-direction: column; align-items: stretch; gap: 10px; }
+.gd-answer-box { min-height: 0; font-size: 14px; line-height: 20px; }
+.gd-form__row { display: flex; align-items: center; gap: 8px; }
+.gd-form__send { margin-left: auto; }
+
+/* ---------- right: what Claude knows / interview plan ---------- */
+.gd-ctx { width: 340px; flex: none; padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.gd-ctx__head { flex: none; padding: 14px 20px; border-bottom: 1px solid var(--separator); display: flex; flex-direction: column; gap: 2px; }
+.gd-ctx__body { flex: 1; min-height: 0; overflow: auto; padding: 14px 20px 18px; display: flex; flex-direction: column; gap: 18px; }
+.gd-ctx__body > p { margin: 0; }
+.gd-ctx__group { display: flex; flex-direction: column; }
+.gd-ctx__group > .cap { margin-bottom: 4px; }
+.gd-ctx__group.is-off .gd-src { opacity: .55; }
+.gd-ctx__row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.gd-goals { min-height: 0; font-size: 14px; line-height: 20px; }
+.gd-goals__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gd-src { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--separator); }
+.gd-src__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gd-src__title { font: 500 14px/19px var(--font-sans); }
+.gd-src__score { width: 28px; flex: none; font: 600 13px/1 var(--font-mono); color: var(--text-secondary); }
+.switch:disabled { opacity: .5; cursor: not-allowed; }
+.gd-plan { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.gd-plan__item { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 0; border-bottom: 1px solid var(--separator); }
+.gd-plan__item > .foot { padding-top: 2px; }
+.gd-plan__q { font: 500 14px/20px var(--font-sans); }
+.gd-plan__item.is-now .gd-plan__q { font-weight: 600; }
+.gd-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Sheets opened from Guidance */
+.gd-diff { display: flex; flex-direction: column; gap: 6px; }
+.gd-diff__old { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--fill); color: var(--text-secondary); white-space: pre-wrap; }
+.gd-diff__new { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--accent-soft); white-space: pre-wrap; }
+.gd-sheet-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+.gd-block { display: block; margin-top: 2px; }
+.gd-lang { display: flex; align-items: center; gap: 12px; }
+
+/* ---------- narrower windows: the plan / sources move under the chat; phones: list, then the conversation ---------- */
+@media (max-width: 1240px) {
+  .gd { height: auto; min-height: 0; flex-wrap: wrap; }
+  .gd-list { height: calc(100dvh - 56px - 2 * var(--space-6)); }
+  .gd-chat { flex: 999 1 480px; height: calc(100dvh - 56px - 2 * var(--space-6)); }
+  .gd-ctx { width: 100%; }
+}
+@media (max-width: 900px) {
+  .gd { display: block; }
+  .gd[data-show="list"] .gd-chat, .gd[data-show="list"] .gd-ctx { display: none; }
+  .gd[data-show="chat"] .gd-list { display: none; }
+  .gd-list { width: auto; height: auto; }
+  .gd-list__box { max-height: none; }
+  .gd-chat { height: calc(100dvh - 120px); min-height: 480px; }
+  .gd-ctx { margin-top: var(--space-4); }
+  .gd-back { display: inline-flex; flex-basis: 100%; justify-content: flex-start; margin-left: -8px; }
+  .gd-head { flex-wrap: wrap; padding: 12px 16px; row-gap: 4px; }
+  .gd-head__text { flex-basis: 60%; }
+  .gd-form__field { flex-basis: 100%; }
+  .gd-deep { margin-left: auto; }
+  .gd-head__tools { flex-wrap: wrap; }
+  .gd-log { padding: 14px 16px; }
+  .bubble, .gd-answer { max-width: 96%; }
+  .gd-feedback__grid { grid-template-columns: minmax(0, 1fr); }
+  .gd-form { padding: 10px 12px 12px; flex-wrap: wrap; }
+}

@@ -10,6 +10,7 @@ import { renderOnboarding, obNext, OB } from "./screens/onboarding.js";
 import { JOB_ACTIONS, bindJobs } from "./screens/jobs/index.js";
 import { RES_ACTIONS, bindResumes } from "./screens/resumes/index.js";
 import { INS_ACTIONS, bindInsights } from "./screens/insights/index.js";
+import { GUIDE_ACTIONS, bindGuidance } from "./screens/guidance/index.js";
 import { ACT_ACTIONS } from "./screens/activity/index.js";
 import { DOC_ACTIONS } from "./screens/doctor/index.js";
 
@@ -61,6 +62,8 @@ const ACTIONS = {
   ...RES_ACTIONS,
   // insights screen (and the to-do marks on a job's raise card)
   ...INS_ACTIONS,
+  // guidance screen (and links in Claude's text anywhere, the Ask panel's Open in Guidance)
+  ...GUIDE_ACTIONS,
   // activity and doctor screens
   ...ACT_ACTIONS,
   ...DOC_ACTIONS,
@@ -70,6 +73,7 @@ export function bindEvents() {
   bindJobs();
   bindResumes();
   bindInsights();
+  bindGuidance();
   document.addEventListener("click", async (e) => {
     if (!e.target.closest(".menu-wrap")) toggleMenu(false);
     const act = e.target.closest("[data-action]");

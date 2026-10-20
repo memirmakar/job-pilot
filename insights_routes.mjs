@@ -13,10 +13,12 @@ export function insightsRoutes({ body, json }) {
       json(res, T.setDone(String(id), !!done));
     },
     // { ids[], added } -> state: "Add to my to-do list" on a job's card
+    // { items[{ title why hours kind }] } -> { state, ids }: new steps from Guidance (a coach answer, a mock interview's practice list)
     "POST /api/todo/add": async (req, res) => {
-      const { ids, added = true } = await body(req);
-      if (!Array.isArray(ids) || !ids.length) return json(res, { error: "No steps to add" }, 400);
+      const { ids, items, added = true } = await body(req);
       const T = await fresh("todo.mjs");
+      if (Array.isArray(items) && items.length) return json(res, T.addCustom(items.slice(0, 10)));
+      if (!Array.isArray(ids) || !ids.length) return json(res, { error: "No steps to add" }, 400);
       json(res, T.setAdded(ids.map(String), !!added));
     },
   };

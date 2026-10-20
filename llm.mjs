@@ -36,8 +36,8 @@ export function loadResumes() {
 
 // ---------- Claude Code call ----------
 // Runs `claude -p` with a JSON schema for the reply. By default only the Read tool is available (to open resume files);
-// the doctor passes a wider tool set. `weekly: true` uses the weekly (stronger) model.
-export function ask({ system, prompt, schema, weekly = false, model, tools = ["Read"], permissionMode, timeoutMs = 5 * 60e3 }) {
+// the doctor passes a wider tool set. `weekly: true` uses the weekly (stronger) model. `signal` (AbortSignal) stops the call (Guidance's Cancel).
+export function ask({ system, prompt, schema, weekly = false, model, tools = ["Read"], permissionMode, timeoutMs = 5 * 60e3, signal }) {
   return new Promise((resolve, reject) => {
     if (!CLAUDE) return reject(new ClaudeLoginError("Claude Code CLI not found. Install it, then set its path in Settings if it isn't detected."));
     const args = [
@@ -54,6 +54,7 @@ export function ask({ system, prompt, schema, weekly = false, model, tools = ["R
     const p = spawn(CLAUDE, args, { cwd: DIR, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
     let out = "", err = "";
     const timer = setTimeout(() => { p.kill(); reject(new Error(`Claude Code timed out after ${Math.round(timeoutMs / 60e3)} minutes`)); }, timeoutMs);
+    signal?.addEventListener("abort", () => { clearTimeout(timer); p.kill(); reject(Object.assign(new Error("Cancelled"), { cancelled: true })); }, { once: true });
     p.stdout.on("data", (d) => (out += d));
     p.stderr.on("data", (d) => (err += d));
     p.on("error", (e) => { clearTimeout(timer); reject(e); });

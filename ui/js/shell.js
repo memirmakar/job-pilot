@@ -1,11 +1,9 @@
 // The app shell (canvas board Main.dc.html): segmented sections, live run status with Run now / Stop, Ask Claude, More menu.
 import { S, app } from "./state.js";
 import { $, esc, fmtDate, icon } from "./util.js";
-import { SECTIONS, MORE } from "./router.js";
+import { SECTIONS, MORE, go } from "./router.js";
 import { PHASE } from "./legacy.js";
 import { pill } from "./components/status-pill.js";
-import { callout } from "./components/card.js";
-import { openSheet } from "./components/sheet.js";
 import { isDark, getChoice } from "./theme.js";
 import { runProblem, waitingCount } from "./screens/jobs/track.js";
 import { time, shortDay } from "./screens/jobs/model.js";
@@ -81,15 +79,12 @@ export function renderStatus() {
       : `<button class="jp-btn jp-btn--sm" type="button" data-action="run">Run now</button>`}`;
 }
 
+// Ask Claude: a new Guidance conversation, ready to type into (it's saved with its first message)
 export function openAskClaude() {
-  openSheet({
-    title: "Ask Claude",
-    body: `<div style="display:flex;flex-direction:column;gap:var(--space-4)">
-      <p class="t-callout" style="color:var(--text-secondary)">Asking Claude about a job, your search or your resumes comes in a later stage.</p>
-      ${callout("For now, every job's detail explains Claude's decisions, and the <b>Doctor</b> can check the app when something goes wrong.")}</div>`,
-    actions: `<a class="jp-btn jp-btn--tinted" href="#doctor" data-nav="doctor" data-sheet-close>Open Doctor</a>
-      <button class="jp-btn jp-btn--plain" type="button" data-sheet-close>Close</button>`,
-  });
+  delete S.g.convs.new;
+  S.g.sel = "new"; S.g.open = true;
+  go("guidance/new");
+  $("#g-input")?.focus();
 }
 
 Object.assign(app, { renderNav, renderStatus });

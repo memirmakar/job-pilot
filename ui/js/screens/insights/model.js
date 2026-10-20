@@ -67,7 +67,7 @@ export function suggestion(b) {
 }
 
 // ----- To-do -----
-const KIND = { ...RECTYPE, resume: "Resume edit", applications: "Applications", linkedin: "LinkedIn profile" };
+const KIND = { ...RECTYPE, resume: "Resume edit", applications: "Applications", linkedin: "LinkedIn profile", practice: "Practice" };
 const IMPACT = { high: "High impact", medium: "Medium impact", low: "Low impact" };
 const hoursText = (h) => h < 1 ? `${Math.round(h * 60)} min` : `${Math.round(h * 10) / 10} ${h === 1 ? "hour" : "hours"}`;
 // A short label for a step Claude hasn't titled yet: its first clause
@@ -91,7 +91,7 @@ export function todoItems() {
 }
 export const ptsText = (it) => it.jobs.length ? `+${it.lo === it.hi ? it.lo : `${it.lo}–${it.hi}`} on ${plural(it.jobs.length, "job")}` : it.impact ? IMPACT[it.impact] : "";
 export const companiesText = (it) => {
-  if (!it.jobs.length) return it.market ? "From the market review" : "No open jobs";
+  if (!it.jobs.length) return it.market ? "From the market review" : it.custom ? "Added from Guidance" : "No open jobs";
   const names = [...new Set(it.jobs.map((j) => j.r.company))];
   return names.slice(0, 3).join(", ") + (names.length > 3 ? ` and ${names.length - 3} more` : "");
 };
