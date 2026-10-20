@@ -19,6 +19,10 @@ export const getGithub = () => read("/api/github");             // { user, fetch
 export const getLibrary = () => read("/api/library");           // { entries, due }
 export const getDoctor = () => read("/api/doctor");             // doctor reports
 export const getRuns = () => read("/api/runs");                 // last 30 finished runs (no events)
+export const getConversation = (site, id) => call(`/api/conversation?site=${encodeURIComponent(site)}&id=${encodeURIComponent(id)}`); // { messages[] }
+
+// ----- Ask Claude about a job -----
+export const askAboutJob = (site, id, message) => call("/api/ask", { site, id, message }); // the whole conversation after Claude's reply
 
 // ----- runs and background tasks -----
 export const startRun = (opts = {}) => call("/api/run", opts);  // { dryRun?, limit? }

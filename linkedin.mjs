@@ -120,7 +120,10 @@ export async function readJobPage(page, id) {
   const easyBtn = page.getByRole("button", { name: LI.easyApply }).or(page.getByRole("link", { name: LI.easyApply })).filter({ visible: true }).first();
   const easyApply = !closed && (await exists(easyBtn));
   const alreadyApplied = await page.getByText(LI.applied).first().isVisible().catch(() => false);
-  return { url, title, company, location, postedText, postedAt: parsePosted(postedText), applicants, closed, easyApply, alreadyApplied, easyBtn };
+  // Company logo in the top card (best effort; the app shows initials without it)
+  const logo = await page.locator('main a[href*="/company/"] img').first().getAttribute("src", { timeout: 1500 }).catch(() => null);
+  return { url, title, company, location, postedText, postedAt: parsePosted(postedText), applicants, closed, easyApply, alreadyApplied, easyBtn,
+    logoUrl: /^https:\/\//.test(logo || "") ? logo : null };
 }
 
 // External jobs: click "Apply on company website" and capture where it leads (the new tab is closed right away).

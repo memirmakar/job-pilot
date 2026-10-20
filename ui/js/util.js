@@ -16,7 +16,7 @@ export const pdfUrl = (p) => "/pdf?p=" + encodeURIComponent(p);
 // and long plain paragraphs are split into one bullet per sentence.
 export function rich(text) {
   if (!text) return "";
-  let ls = String(text).split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  let ls = String(text).replace(/\\n/g, "\n").split(/\n+/).map((l) => l.trim()).filter(Boolean);
   if (ls.length === 1 && !ls[0].startsWith("- ") && ls[0].length > 180)
     ls = ls[0].split(/(?<=[.!?])\s+(?=[A-ZÇĞİÖŞÜ0-9"'(])/).map((s) => "- " + s);
   const bullets = ls.filter((l) => /^[-•*]\s/.test(l));
@@ -36,4 +36,13 @@ export const icon = (name, cls = "ico") => `<svg class="${cls}" viewBox="0 0 24 
   more: '<circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle>',
   check: '<path d="M5 12l5 5 9-10"></path>',
   close: '<path d="M6 6l12 12M18 6L6 18"></path>',
+  down: '<path d="M6 9l6 6 6-6"></path>',
+  back: '<path d="M15 6l-6 6 6 6"></path>',
+  search: '<circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path>',
+  archive: '<rect x="3" y="4" width="18" height="5" rx="1"></rect><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"></path>',
+  doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M9 13h6M9 17h4"></path>',
+  external: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"></path>',
+  "arrow-down": '<path d="M12 5v14M6 13l6 6 6-6"></path>',
 }[name] || ""}</svg>`;

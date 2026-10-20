@@ -7,6 +7,9 @@ export const S = {
   MARKET: null, DONE: {}, AUDIT: {}, STATS: null, GH: null, LIB: { entries: [] }, DOCS: [], RUNS: [],
   // view state
   view: "jobs", sub: "overview", filter: "all", selected: null, query: "", showArchived: false,
+  // Jobs: grouping (remembered), the open panel over the detail ("none" | "posting" | "ask"), phone list/detail, Ask draft
+  groupBy: (() => { try { return localStorage.getItem("jp-group") || "day"; } catch { return "day"; } })(),
+  groupMenu: false, panel: "none", jobOpen: false, askDraft: "",
 };
 
 // Hooks the router fills in, so screens can re-render without importing the router

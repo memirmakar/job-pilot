@@ -148,7 +148,7 @@ async function processJob(page, pick, files, opts) {
   const rec = {
     site: "linkedin", id: pick.id, url: jp.url, title: jp.title, company: jp.company, location: jp.location || pick.location,
     field: pick.field, selection: { relevance: pick.relevance, reason: pick.reason, searchTerm: pick.searchTerm },
-    postedAt: jp.postedAt, postedText: jp.postedText, applicants: jp.applicants, easyApply: jp.easyApply,
+    postedAt: jp.postedAt, postedText: jp.postedText, applicants: jp.applicants, easyApply: jp.easyApply, logoUrl: jp.logoUrl,
     createdAt: new Date().toISOString(), lastCheckedAt: new Date().toISOString(), status: "in_progress",
     description: await LIN.jobDescription(page), steps: [], warnings: [],
   };

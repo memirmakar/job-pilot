@@ -7,6 +7,7 @@ import { toggleMenu, renderMenu, openAskClaude } from "./shell.js";
 import { setChoice, isDark } from "./theme.js";
 import { renderSettings, targetRows, readTargets } from "./screens/settings.js";
 import { renderOnboarding, obNext, OB } from "./screens/onboarding.js";
+import { JOB_ACTIONS, bindJobs } from "./screens/jobs/index.js";
 
 const ACTIONS = {
   run: async () => { await api.startRun({}); toast("Run started. You'll see an Edge window working; leave it open."); await loadState(); },
@@ -51,9 +52,12 @@ const ACTIONS = {
   more: () => toggleMenu(),
   "theme-toggle": () => { setChoice(isDark() ? "light" : "dark"); renderMenu(); },
   "theme-system": () => { setChoice(null); renderMenu(); },
+  // jobs screen
+  ...JOB_ACTIONS,
 };
 
 export function bindEvents() {
+  bindJobs();
   document.addEventListener("click", async (e) => {
     if (!e.target.closest(".menu-wrap")) toggleMenu(false);
     const act = e.target.closest("[data-action]");
@@ -66,12 +70,9 @@ export function bindEvents() {
     if (nav) { e.preventDefault(); toggleMenu(false); go(nav.dataset.nav); return; }
     const f = e.target.closest("[data-f]");
     if (f) { S.filter = f.dataset.f; app.render(); return; }
-    const item = e.target.closest(".item");
-    if (item) { S.selected = item.dataset.k; app.render(); return; }
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#more-menu").hidden) { toggleMenu(false); $("#more-btn").focus(); } });
   document.addEventListener("change", async (e) => {
-    if (e.target.dataset.action === "toggle-archived") { S.showArchived = e.target.checked; S.filter = "all"; return app.render(); }
     if (e.target.id === "ob-li") { OB.linkedinDone = e.target.checked; return renderOnboarding(); }
     const cb = e.target.closest("[data-todo]");
     if (!cb) return;

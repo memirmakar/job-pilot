@@ -98,64 +98,14 @@
 .legacy .check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; user-select: none; }
 .legacy .check input { width: 16px; height: 16px; accent-color: var(--accent); }
 
-/* ---------- jobs view ---------- */
-.legacy .apps { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
-@media (max-width: 1000px) { .legacy .apps { grid-template-columns: 1fr; } }
-.legacy .list { padding: 0; overflow: hidden; position: sticky; top: 76px; }
-@media (max-width: 1000px) { .legacy .list { position: static; } }
-.legacy .list .tools { padding: 14px; border-bottom: 1px solid var(--separator); display: grid; gap: 10px; }
-.legacy .search { width: 100%; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--control-border); background: var(--fill); color: var(--text); font: inherit; }
-.legacy .search:focus { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+/* ---------- status filter capsules (Activity) ---------- */
 .legacy .filters { display: flex; flex-wrap: wrap; gap: 6px; }
 .legacy .filters button { border: 1px solid var(--control-border); background: transparent; color: var(--text-secondary); border-radius: var(--radius-pill); padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; }
 .legacy .filters button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.legacy .items { max-height: calc(100vh - 260px); overflow-y: auto; }
-.legacy .item { padding: 12px 14px; border-bottom: 1px solid var(--separator); cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; }
-.legacy .item:hover { background: var(--surface-hover); }
-.legacy .item.sel { background: var(--accent-soft); }
-.legacy .item .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.legacy .item .c { color: var(--text-tertiary); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.legacy .item .sc { grid-row: span 2; align-self: center; text-align: right; font: 700 14px var(--font-mono); font-variant-numeric: tabular-nums; }
-.legacy .item .sc small { display: block; font-weight: 500; font-size: 11px; color: var(--text-tertiary); }
-
-.legacy .head { display: flex; gap: 18px; align-items: center; }
-.legacy .head h2 { margin: 0; font: 700 21px/1.3 var(--font-display); letter-spacing: -.2px; }
-.legacy .head .who { color: var(--text-secondary); margin-top: 2px; }
-.legacy .head .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
-
-.legacy details.card > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .06em; }
-.legacy details.card > summary::-webkit-details-marker { display: none; }
-.legacy details.card > summary::after { content: "▾"; margin-left: auto; color: var(--text-tertiary); transition: transform .15s; }
-.legacy details.card:not([open]) > summary::after { transform: rotate(-90deg); }
-.legacy details.card[open] > summary { margin-bottom: 14px; }
-
-.legacy .resume-row { padding: 12px 0; border-top: 1px solid var(--separator); }
-.legacy .resume-row:first-child { border-top: 0; padding-top: 0; }
-.legacy .resume-row .top { display: grid; grid-template-columns: 1fr 160px 34px; gap: 12px; align-items: center; }
-.legacy .resume-row .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.legacy .resume-row.best .name { color: var(--accent-text); }
-.legacy .resume-row details { margin-top: 6px; }
-.legacy .resume-row summary { cursor: pointer; color: var(--text-tertiary); font-size: 12.5px; }
-
-.legacy .qa { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 4px 20px; padding: 12px 0; border-top: 1px solid var(--separator); }
-.legacy .qa:first-child { border-top: 0; padding-top: 0; }
-.legacy .qa .q { font-weight: 500; }
-.legacy .qa .a { color: var(--text); font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
-.legacy .qa .r { grid-column: 1 / -1; font-size: 13px; }
-@media (max-width: 760px) { .legacy .qa { grid-template-columns: 1fr; } }
-
-.legacy .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media (max-width: 1200px) { .legacy .compare { grid-template-columns: 1fr; } }
-.legacy .compare iframe { width: 100%; height: 620px; border: 1px solid var(--separator); border-radius: var(--radius-sm); background: var(--surface); }
-/* .cap is also the canvas caption style in app.css: reset what that rule sets */
-.legacy .compare .cap { display: flex; justify-content: space-between; font: 400 12.5px/1.55 var(--font-sans); letter-spacing: normal; text-transform: none; color: var(--text-secondary); margin: 0 0 6px; gap: 8px; }
-.legacy pre.jd { white-space: pre-wrap; font: inherit; color: var(--text-secondary); margin: 0; max-height: 460px; overflow: auto; }
-
 .legacy table.log { width: 100%; border-collapse: collapse; font-size: 13px; }
 .legacy table.log th { text-align: left; color: var(--text-tertiary); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--separator); position: sticky; top: 0; background: var(--surface); }
 .legacy table.log td { padding: 8px 10px; border-bottom: 1px solid var(--separator); vertical-align: top; }
 .legacy table.log tr:hover td { background: var(--surface-hover); }
-.legacy .empty { color: var(--text-tertiary); padding: 40px; text-align: center; }
 .legacy .repo-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .legacy .repo-head a { font-weight: 600; font-size: 15px; }
 
@@ -186,8 +136,6 @@
 .legacy .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary); flex: none; display: inline-block; }
 .legacy .dot.live { background: var(--success); animation: jp-pulse 1.8s ease-out infinite; }
 .legacy pre.events { white-space: pre-wrap; font: 12px/1.5 var(--font-mono); color: var(--text-secondary); background: var(--fill); border-radius: var(--radius-sm); padding: 10px 12px; margin: 0; max-height: 240px; overflow: auto; }
-.legacy .gauge { width: 76px; height: 76px; flex: none; }
-.legacy .gauge text { fill: var(--text); font: 700 20px var(--font-mono); }
 
 /* ---------- onboarding ---------- */
 .legacy .wizard { max-width: 860px; margin: 0 auto; }

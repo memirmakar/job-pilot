@@ -256,7 +256,20 @@ const routes = {
     fs.writeFileSync(f, JSON.stringify(r, null, 2));
     json(res, { ok: true });
   },
-  "POST /api/quit": (req, res) => { json(res, { ok: true }); setTimeout(() => process.exit(0), 300); },
+  // ----- Ask Claude about a job (conversations.mjs) -----
+  "GET /api/conversation": async (req, res, url) => {
+    const C = await fresh("conversations.mjs");
+    json(res, C.loadConversation(url.searchParams.get("site"), url.searchParams.get("id")));
+  },
+  "POST /api/ask": async (req, res) => {
+    const { site, id, message } = await body(req);
+    const rec = readJson(path.join(RECORDS_DIR, `${path.basename(String(site))}-${path.basename(String(id))}.json`));
+    if (!rec) return json(res, { error: "Job not found" }, 404);
+    if (!String(message || "").trim()) return json(res, { error: "Type a question first" }, 400);
+    const C = await fresh("conversations.mjs");
+    json(res, await C.askAboutJob(rec, String(message).trim().slice(0, 4000)));
+  },
+  "POST /api/quit":(req, res) => { json(res, { ok: true }); setTimeout(() => process.exit(0), 300); },
 };
 
 const server = http.createServer(async (req, res) => {
