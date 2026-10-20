@@ -3,6 +3,8 @@
 //   node apply.mjs login                                                  open LinkedIn in a normal Edge window to sign in
 //   node apply.mjs tracker                                                read LinkedIn's job tracker; prints what would change, saves nothing
 //   node apply.mjs selftest                                               check LinkedIn can be read (JSON; used by the doctor)
+//   node apply.mjs todo                                                   merge new to-do steps with Claude (todo_group.mjs)
+//   node apply.mjs rescore [--job ID] [--limit N]                         re-score jobs flagged by to-do steps you ticked (at most 5)
 //   node apply.mjs review | library | github [--refresh] | doctor "<problem>"
 import { runDaily, selftest } from "./pipeline.mjs";
 import { openNormalEdge } from "./linkedin.mjs";
@@ -42,6 +44,16 @@ try {
   } else if (cmd === "github") {
     const repos = await loadGithub({ force: flag("--refresh") });
     for (const r of repos) console.log(`${r.name}: ${r.review?.verdict || "not reviewed"}`);
+  } else if (cmd === "todo") {
+    const { groupTodo } = await import("./todo_group.mjs");
+    const r = await groupTodo();
+    console.log(r.added ? `Merged ${r.added} new step(s) into ${r.groups} to-do item(s).` : "No new to-do steps to merge.");
+  } else if (cmd === "rescore") {
+    const { rescoreFlagged } = await import("./rescore.mjs");
+    const { loadResumes } = await import("./llm.mjs");
+    const { libraryFiles } = await import("./library.mjs");
+    const n = await rescoreFlagged([...loadResumes(), ...libraryFiles()], { github: await brief(), only: val("--job") || null, max: Number(val("--limit")) || undefined, log: console.log });
+    console.log(`Re-scored ${n} job(s).`);
   } else if (cmd === "doctor") {
     const rep = await runDoctor({ reason: argv.slice(1).join(" ") || "Manual check requested from the app" });
     console.log(JSON.stringify({ fixed: rep.fixed, diagnosis: rep.diagnosis, needs_user: rep.needs_user, changedFiles: rep.changedFiles }, null, 2));

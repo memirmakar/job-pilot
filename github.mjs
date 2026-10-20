@@ -57,7 +57,8 @@ export async function loadGithub({ force = false } = {}) {
     }
   }
   const reviews = fs.existsSync(REVIEW_FILE) ? JSON.parse(fs.readFileSync(REVIEW_FILE, "utf8")) : {};
-  const toReview = cached.repos.filter((r) => reviews[r.name]?.pushed !== r.pushed);
+  // changed repos, plus (on a refresh) reviews from before relevance, fixes and pins were asked for
+  const toReview = cached.repos.filter((r) => reviews[r.name]?.pushed !== r.pushed || (force && reviews[r.name]?.relevance == null));
   if (toReview.length) {
     console.log(`  Reviewing ${toReview.length} GitHub repo(s) with Claude...`);
     const { reviews: fresh } = await assessRepos(toReview);

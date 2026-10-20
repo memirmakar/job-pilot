@@ -230,3 +230,6 @@
   .jd-posting__title { order: 5; flex-basis: 100%; }
   .posting { padding: 18px 16px 24px; }
 }
+/* A raise step's to-do mark (the same item as Insights → To-do) */
+.jd-todo { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.jd-todo__done { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/18px var(--font-sans); color: var(--text-secondary); cursor: pointer; }

@@ -14,7 +14,8 @@ export const getState = (recheck = false) => call("/api/state" + (recheck ? "?re
 export const getApplications = () => read("/api/applications"); // job records, newest first
 export const getLog = () => read("/api/log");                   // applications.csv rows, newest first
 export const getMeta = () => read("/api/meta");                 // minAtsScore, tailorTarget, dailyLimit, dailyJobs
-export const getMarket = () => read("/api/market");             // { market, done, audit, stats }
+export const getMarket = () => read("/api/market");             // { market, audit, stats }
+export const getInsights = () => read("/api/insights");         // { fields, jobFields, notPicked, jobItems, todo{ items pending groupedAt }, market }
 export const getGithub = () => read("/api/github");             // { user, fetchedAt, repos[] with review }
 export const getLibrary = () => read("/api/library");           // { entries, due }
 export const getDoctor = () => read("/api/doctor");             // doctor reports
@@ -48,7 +49,8 @@ export const saveAnswers = (answers) => call("/api/answers", { answers });      
 export const docxUrl = (id) => "/api/resumes/docx?id=" + encodeURIComponent(id);
 export const saveProfile = (patch) => call("/api/profile", patch);
 export const saveSettings = (patch) => call("/api/settings", patch);
-export const setTodo = (title, done) => call("/api/todo", { title, done });
+export const setTodo = (id, done) => call("/api/todo", { id, done });        // -> { state, flagged }: done flags the jobs it lifts for re-scoring
+export const addTodo = (ids, added = true) => call("/api/todo/add", { ids, added }); // "Add to my to-do list" on a job's card
 export const setArchived = (site, id, archived) => call("/api/archive", { site, id, archived });
 // ----- job statuses (status_routes.mjs) -----
 export const setJobStatus = (site, id, status, date = null) => call("/api/status", { site, id, status, date }); // interview | offer | rejected | applied

@@ -37,15 +37,16 @@ export async function refreshAudit(records) {
 
 // Missing keywords of a job split into real skills (canonical, deduped) and other requirements, using the audit.
 export function auditedMissing(r, audit) {
-  const b = bestEntry(r), skills = new Map(), other = new Map();
+  const b = bestEntry(r), skills = new Map(), other = new Map(), have = new Map();
   for (const k of [...(b.missing_keywords || []), ...(b.unmet_requirements || [])]) {
     const a = audit.entries[norm(k).trim()];
     if (!a) { skills.set(k, { canonical: k, kind: "skill" }); continue; } // not audited yet: show as-is
     if (a.kind === "noise" || a.kind === "generic_duty" || a.kind === "soft_skill") continue;
-    if (SKILL_KINDS.has(a.kind)) { if (!a.satisfied_by_profile) skills.set(a.canonical, a); }
+    if (SKILL_KINDS.has(a.kind)) { if (!a.satisfied_by_profile) skills.set(a.canonical, a); else have.set(a.canonical, a); }
     else other.set(a.canonical, a);
   }
-  return { skills: [...skills.values()], other: [...other.values()] };
+  // have: skills your profile covers but the resume didn't show (Insights → Skill gaps, "Add to your resume")
+  return { skills: [...skills.values()], other: [...other.values()], have: [...have.values()] };
 }
 
 const norm = (s) => (s || "").replace(/[İIı]/g, "i").toLowerCase();
@@ -112,6 +113,8 @@ export function computeStats(records, audit = loadAudit()) {
       topMatched: countTop(rs.flatMap((r) => bestEntry(r).matched_keywords), 8),
     })).sort((a, b) => b.jobs - a.jobs),
     topMissingOverall: missingSkills(records).slice(0, 25),
+    onProfileNotResume: Object.entries(records.reduce((c, r) => { for (const a of auditedMissing(r, audit).have) c[a.canonical] = (c[a.canonical] || 0) + 1; return c; }, {}))
+      .sort((x, y) => y[1] - x[1]).slice(0, 12).map(([keyword, count]) => ({ keyword, count })),
     otherRequirements: otherReqs(),
     // same, counted only over jobs in your target segments (not "Other")
     topMissingInTargets: missingSkills(records.filter((r) => segmentOf(r) !== "Other")).slice(0, 15),

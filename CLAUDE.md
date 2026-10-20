@@ -19,7 +19,7 @@ resumes for each job, applies via Easy Apply where allowed, and explains every d
 | Path | What |
 |---|---|
 | `server.mjs` | HTTP server: `/api/*` routes, `/pdf`, and static files from `ui/` |
-| `apply.mjs` | CLI entry (`run`, `login`, `library`, `review`, `github`, `tracker`, `selftest`, `doctor`) |
+| `apply.mjs` | CLI entry (`run`, `login`, `library`, `review`, `github`, `tracker`, `todo`, `rescore`, `selftest`, `doctor`) |
 | `pipeline.mjs` `linkedin.mjs` `llm.mjs` | daily run, LinkedIn DOM logic, Claude calls |
 | `easy_apply.mjs` | the Easy Apply form: submit, hold for your OK (`waiting_ok`), dry run, and sending approved jobs (`sendQueue`) |
 | `approval.mjs` `statuses.mjs` `status_routes.mjs` | Waiting for your OK (hold rule, approve/skip, approved answers); status history after Applied; `/api/status` `/api/approve` `/api/skip` `/api/send` |
@@ -28,12 +28,14 @@ resumes for each job, applies via Easy Apply where allowed, and explains every d
 | `conversations.mjs` | Ask Claude about a job: builds the job context, calls `llm.mjs` `ask()`, saves `data/conversations/` |
 | `library.mjs` `market.mjs` `github.mjs` `doctor.mjs` `resume_pdf.mjs` | ready resumes, market review, GitHub review, self-repair, PDF rendering |
 | `resumes.mjs` `reupload.mjs` `resume_read.mjs` `resume_routes.mjs` | Resumes screen: listing with versions, staged uploads and new versions, Claude reading/checking resume files, `/api/resumes/*` routes |
+| `insights.mjs` `insights_routes.mjs` | Insights data the server works out (job fields, not-picked jobs, to-do items, job market numbers); `/api/insights` `/api/todo` `/api/todo/add` |
+| `todo.mjs` `todo_group.mjs` `rescore.mjs` `market_snapshot.mjs` | to-do items from the market review + every job's raise steps (done/added marks, re-score flags); Claude merging new steps (incremental, cached); the run's re-score of flagged jobs; one market snapshot per run |
 | `answers.mjs` `docx.mjs` | standard answers (keys, migration out of facts, prompt text); `.docx` export and reading back (Node zlib only) |
 | `ui/index.html` | shell markup (top bar), loads the CSS and `js/main.js` |
-| `ui/styles/` | `tokens.css` (generated), `components.css` (design-system bundle, copy), `app.css` (canvas helpers + shell), `jobs.css` (Jobs screen), `resumes.css` (Resumes screen), `legacy.css` (old screens) |
+| `ui/styles/` | `tokens.css` (generated), `components.css` (design-system bundle, copy), `app.css` (canvas helpers + shell), `jobs.css` (Jobs screen), `resumes.css` (Resumes screen), `insights.css` (Insights screen), `legacy.css` (old screens) |
 | `ui/js/` | `main.js` boot · `api.js` every server call · `state.js` data + view state · `router.js` sections · `shell.js` top bar · `actions.js` all `data-action` handlers · `theme.js` · `util.js` · `legacy.js` old widgets |
 | `ui/js/components/` | `score-ring` `status-pill` `tag` `list-row` `card` (+ callout) `sheet` (slide-over, or `center: true` dialog) `company-logo` `drop` (drag-and-drop files) |
-| `ui/js/screens/` | one file per screen, or a folder for big ones (`jobs/`); table below |
+| `ui/js/screens/` | one file per screen, or a folder for big ones (`jobs/`, `resumes/`, `insights/`); table below |
 | `design/` | `tokens.json` (from the design system) and `gen-tokens.mjs` → `ui/styles/tokens.css` |
 
 ## Data files (all git-ignored)
@@ -47,8 +49,10 @@ resumes for each job, applies via Easy Apply where allowed, and explains every d
   `status: approved` + `approval{at answers[{label value}] skipped lastDryRun}`; sending moves the held `steps` to `heldSteps` and refills `steps`.
   Stage 3 adds `tailored.versions[{v by(claude|you) file path score at note changes resume confirmed}]` (oldest first, last = current; missing = v1 from tailored{})
   and `tailored.sent{v at company}` (missing on old applied records = v1 when `uploaded`). A re-upload moves `tailored.file/path/score` to the new version; the sent one never changes.
+  Stage 4 adds `rescore{at items[]}` ("Re-score on next run": set by ticking a to-do item that lifts the job, never on applied or archived jobs; cleared by
+  `rescore.mjs`, up to `rescorePerRun` (max 5) per run) and `rescored{at from to items}`. A re-score that lifts a `resume_insufficient` job to the cutoff makes it `ready_to_apply`.
 - `applications.csv`: tab-separated activity log `date site status id title company url reason`.
-- `data/settings.json`: `applyMode` (auto | ask_below_target | ask_all | analyze_only; unknown = analyze_only) `noReplyDays` `dailyJobs dailyApplyLimit scheduleEnabled scheduleTime modelDaily modelWeekly minAtsScore tailorTarget postedWithin tailorMaxPasses maxRunMinutes claudePath …` (defaults in `config.mjs`).
+- `data/settings.json`: `applyMode` (auto | ask_below_target | ask_all | analyze_only; unknown = analyze_only) `noReplyDays` `dailyJobs dailyApplyLimit scheduleEnabled scheduleTime modelDaily modelWeekly minAtsScore tailorTarget postedWithin tailorMaxPasses maxRunMinutes rescorePerRun claudePath …` (defaults in `config.mjs`).
 - `data/profile.json`: `name goalsText preferences locations workplace seniority targets[{field searchTerms why}] titleExclude companyExclude facts githubUser onboardedAt`,
   `answers{salary military license notice travel relocation english: {tr en}}` (moved out of `facts` once by `config.mjs` `loadProfile()`; old text in `factsBeforeAnswers`).
   `config.profile` (what every prompt reads) = standard answers + remaining facts.
@@ -57,7 +61,13 @@ resumes for each job, applies via Easy Apply where allowed, and explains every d
 - `data/runs/current.json` (live run: `phase detail counts events anomalies pid`), `data/runs/<id>.json` (finished: `outcome{summary stop stopKind stoppedAt resumeAt} selection`), `*.log` task logs.
   `stopKind`: linkedin_login | linkedin_limit | claude_limit | claude_login | time_limit | browser_closed | repeated_errors | crash | stopped (old runs: none).
   The Jobs problem states read it (`screens/jobs/track.js` `runProblem()`); a `current.json` left unfinished counts as a stopped run.
-- `data/market/review.json` (`review{headline verdict_points segments strengths gaps todo resume_fixes stop_doing}`, `stats`), `todo_state.json` (`title → doneAt`), `keyword_audit.json`.
+- `data/market/review.json` (`review{headline verdict_points segments strengths gaps todo resume_fixes stop_doing}`, `stats`), `keyword_audit.json`.
+  `todo_state.json` = `{v: 2, done{itemId: at}, added{itemId: at}, legacy{}}` (v1 was `title → doneAt`; `todo.mjs` moves titles to item ids, unknown ones stay in `legacy`).
+  `todo_groups.json` = `{at, groups[{id title keys[]}]}`: Claude's merges. Source keys: `m:<title hash>` (market todo) and `r:<site>-<id>:<action hash>` (a job's
+  step, the same list the Jobs raise card shows: tailored recommendations when the tailored resume is used). Item id = `t-<hash of its first step's text>`,
+  so marks on an unmerged step keep their id; only steps no group has seen go to Claude. `snapshots.json` = one entry per run from Stage 4 on
+  (`at run listings fields{} cities{} workplace{remote hybrid onsite unknown} easyApply companies{name: {n field}}`, last 200). Listing cards now carry `workplace`.
+- `data/github/review.json` entries gain `relevance field fixes[] pin(pin|maybe|dont)`; a refresh re-reviews repos whose review lacks `relevance`.
 - `data/conversations/<site>-<id>.json`: Ask Claude chats per job (`site id title company messages[{role text at}] costUsd updatedAt`).
 - `data/github/repos.json` (`user fetchedAt repos`), `data/github/review.json` (`repo → review`); `data/library/<field>/` ready resumes (`meta.json` + `versions[]`, older PDFs in `versions/`, your uploads in `v<N>/`);
   `data/tailored/<job>/` tailored PDFs (`pass1`, `pass2`, re-uploads in `v<N>/`);
@@ -90,7 +100,7 @@ Design system: https://claude.ai/code/artifact/bd77b878-3e00-4d29-b225-02ce02531
 | Job statuses and problem states | `screens/jobs/track.js` (shown status, timeline, `runProblem`), `problems.js` (callouts, first day), `review.js` (review sheet, marks), `detail.js` (notes, `PRIMARY`), `components/status-pill.js` | Jobs-Applied, Jobs-Approve, Jobs-LoggedOut, Jobs-RunFailed, Jobs-Limited, Jobs-FirstDay, Settings-Review (sheet) |
 | Guidance | `screens/guidance.js` (placeholder) | Guidance, Guidance-Interview |
 | Resumes | `screens/resumes/`: `index.js` (screen, actions, keys) `model.js` (data → rows, words) `list.js` `detail.js` `history.js` (changes, versions, jobs, defaults) `answers.js` `upload.js` `reupload.js`; `styles/resumes.css` | Resumes, Resumes-Original, Resumes-Answers, Resumes-Reupload, Resumes-Upload, Resumes-Latte |
-| Insights (now: Overview + GitHub review) | `screens/insights.js`, `screens/overview.js`, `screens/github.js` | Insights, Insights-Todo, Insights-Gaps, Insights-Market, Insights-GitHub, Insights-Latte, Insights-Latte-Todo |
+| Insights | `screens/insights/`: `index.js` (header, tabs, actions) `model.js` (data → words; `todoFor()` feeds the Jobs raise card) `pipeline.js` `todo.js` `gaps.js` `market.js` `github.js`; `styles/insights.css` | Insights, Insights-Todo, Insights-Gaps, Insights-Market, Insights-GitHub, Insights-Latte, Insights-Latte-Todo |
 | Settings | `screens/settings.js` | Settings, Settings-Applying, -Review, -Never, -Latte, -Schedule, -Notifications, -Privacy, -Usage |
 | Onboarding | `screens/onboarding.js` | Onboarding, Onboarding-Profile |
 | Activity | `screens/activity.js` | Activity, Activity-Stopped |
@@ -103,7 +113,7 @@ B-Board, C-Grid and C-Sheet are alternative layouts (sidebar, dock): reference o
 1. **Jobs** (done): rebuild list + detail in jp- markup (Main, A-*, JobDetail): grouping menu, filters, score rings, posting and Ask panels.
 2. **Job statuses** (done): statuses after Applied (LinkedIn job tracker + marks by hand + no-reply rule), timeline, Waiting for your OK (apply modes, review sheet, approved queue, Send now), problem states, sent score.
 3. **Resumes** (done): originals, ready and tailored with versions, standard answers, upload, Export to edit (.docx) and re-upload checks.
-4. **Insights**: tabs Pipeline, To-do, Skill gaps, Job market, GitHub (replaces overview.js / github.js).
+4. **Insights** (done): tabs Pipeline, To-do (merged steps, done → re-score next run, "Add to my to-do list" on the Jobs raise card), Skill gaps, Job market (snapshots per run), GitHub.
 5. **Guidance**: coach chat and mock interview; wire Ask Claude for real.
 6. **Settings + Onboarding**: search profiles, applying, never-apply list, schedule, notifications, privacy, usage; onboarding steps.
 7. **Activity + Doctor**: run history with stopped runs, doctor checks.

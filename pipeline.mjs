@@ -15,6 +15,9 @@ import { nextScheduled } from "./linkedin_guard.mjs";
 import { easyApply, sendQueue } from "./easy_apply.mjs";
 import { holdReason, queued } from "./approval.mjs";
 import { syncApplied } from "./applied_sync.mjs";
+import { saveSnapshot } from "./market_snapshot.mjs";
+import { rescoreFlagged } from "./rescore.mjs";
+import { groupTodo } from "./todo_group.mjs";
 import * as S from "./store.mjs";
 
 const { log } = S;
@@ -180,6 +183,7 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
         };
         await collectAll();
         S.count("listings_seen", listings.size);
+        if (!test) saveSnapshot(run.id, [...listings.values()]); // Job market trends
         if (!listings.size && !noDoctor && shouldAutoRun("No listings")) {
           S.anomaly("no_listings", "LinkedIn searches returned no listings at all");
           const rep = await runDoctor({ reason: "No listings: every LinkedIn search returned zero results", context: JSON.stringify({ targets: config.targets, locations: config.locations, events: run.events.slice(-30) }, null, 1) });
@@ -235,6 +239,8 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
       }
       await pause();
     }
+    // jobs you lifted by ticking to-do steps (no browser needed)
+    if (!onlyJob && !test) await rescoreFlagged(files, { github: GH_BRIEF });
     const parseErrors = run.counts.parse_errors || 0;
     if (parseErrors >= 3 && parseErrors >= picks.length / 2 && !noDoctor && shouldAutoRun("Unreadable job pages")) {
       S.anomaly("parse_errors", `${parseErrors} job pages couldn't be read`);
@@ -267,6 +273,7 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
   // 6. weekly upkeep (needs no browser)
   if (!stop.startsWith("Claude") && !dryRun) {
     if (reviewDue()) { S.setPhase("market review"); try { await runMarketReview(GH_BRIEF); log("Market review updated."); } catch (e) { log(`Market review skipped: ${e.message.split("\n")[0]}`); } }
+    try { await groupTodo({ log }); } catch (e) { log(`To-do merge skipped: ${e.message.split("\n")[0]}`); }
   }
   if (stop.startsWith("Run failed") && !noDoctor && shouldAutoRun("Run crashed")) {
     const rep = await runDoctor({ reason: `Run crashed: ${stop}`, context: run.anomalies.map((a) => a.detail).join("\n").slice(0, 3000) });

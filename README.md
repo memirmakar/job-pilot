@@ -26,6 +26,7 @@ If setup fails, the installer offers to let Claude diagnose and fix the problem.
    - **External jobs** are marked "Apply externally", with the tailored resume ready to download.
 6. **Archive:** listings that have closed are archived. Nothing is deleted: the analysis and tailored resume stay.
 7. **Upkeep:** the GitHub review refreshes every 4 days, the market review and to-do list every 3 days, and the **ready resumes** weekly.
+   New "How to raise this score" steps are merged into your to-do list (Insights → To-do). When you tick a step done, the next runs re-score the jobs it lifts, a few per run.
 
 ## Ready resumes
 Job Pilot keeps **one ready resume per target field** under Resumes, so you have the right one for external applications.

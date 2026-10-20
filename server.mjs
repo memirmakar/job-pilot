@@ -7,6 +7,7 @@ import { spawn, execFile } from "node:child_process";
 import { DIR, DATA, loadSettings, loadProfile, saveSettings, saveProfile, isOnboarded, DEFAULT_SETTINGS } from "./config.mjs";
 import { resumeRoutes } from "./resume_routes.mjs";
 import { statusRoutes } from "./status_routes.mjs";
+import { insightsRoutes } from "./insights_routes.mjs";
 import { stage } from "./reupload.mjs";
 import { archiveOriginal } from "./resumes.mjs";
 
@@ -138,7 +139,7 @@ const routes = {
   "GET /api/market": async (req, res) => {
     const { computeStats, loadRecords, loadAudit } = await fresh("market.mjs");
     json(res, {
-      market: readJson(path.join(DATA, "market", "review.json")), done: readJson(path.join(DATA, "market", "todo_state.json"), {}),
+      market: readJson(path.join(DATA, "market", "review.json")),
       audit: readJson(path.join(DATA, "market", "keyword_audit.json"), { entries: {} }).entries, stats: computeStats(loadRecords(), loadAudit()),
     });
   },
@@ -221,7 +222,7 @@ const routes = {
   },
   "POST /api/task": async (req, res) => {
     const { name } = await body(req);
-    const map = { library: ["library"], review: ["review"], github: ["github", "--refresh"], selftest: ["selftest"] };
+    const map = { library: ["library"], review: ["review"], github: ["github", "--refresh"], selftest: ["selftest"], todo: ["todo"] };
     if (!map[name]) return json(res, { error: "unknown task" }, 400);
     try { json(res, startTask(name, map[name])); } catch (e) { json(res, { error: e.message }, 409); }
   },
@@ -243,15 +244,6 @@ const routes = {
     spawn("cmd.exe", ["/c", "start", "Claude login", "cmd", "/k", `echo Type /login and follow the steps, then close this window. & "${p}"`], { detached: true, stdio: "ignore" }).unref();
     claudeCache = null;
     json(res, { ok: true });
-  },
-  "POST /api/todo": async (req, res) => {
-    const { title, done } = await body(req);
-    const f = path.join(DATA, "market", "todo_state.json");
-    const state = readJson(f, {});
-    if (done) state[title] = new Date().toISOString(); else delete state[title];
-    fs.mkdirSync(path.dirname(f), { recursive: true });
-    fs.writeFileSync(f, JSON.stringify(state, null, 2));
-    json(res, state);
   },
   "POST /api/archive": async (req, res) => {
     // Manually archive/unarchive a job (nothing is deleted)
@@ -279,7 +271,7 @@ const routes = {
   "POST /api/quit":(req, res) => { json(res, { ok: true }); setTimeout(() => process.exit(0), 300); },
 };
 
-Object.assign(routes, resumeRoutes({ body, json }), statusRoutes({ body, json, startTask, running: () => runState().running }));
+Object.assign(routes, resumeRoutes({ body, json }), statusRoutes({ body, json, startTask, running: () => runState().running }), insightsRoutes({ body, json }));
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);

@@ -84,6 +84,7 @@ export async function collectListings(page, keyword, location) {
       if (found.has(c.id)) continue;
       found.set(c.id, {
         id: c.id, title: c.title, company: c.company, location: c.location.replace(/\s*\(.*\)$/, ""),
+        workplace: /\((remote|uzaktan)\)/i.test(c.location) ? "remote" : /\((hybrid|hibrit)\)/i.test(c.location) ? "hybrid" : /\(/.test(c.location) ? "onsite" : null,
         easyApply: c.lines.some((l) => /^(easy apply|kolay başvuru)$/i.test(l)),
         alreadyApplied: c.lines.some((l) => LI.applied.test(l)),
         searchTerm: keyword, searchLocation: location,

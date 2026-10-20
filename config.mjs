@@ -31,6 +31,7 @@ export const DEFAULT_SETTINGS = {
   libraryEveryDays: 7,
   marketEveryDays: 3,
   githubRefreshHours: 96,
+  rescorePerRun: 3,             // jobs re-scored per run after you tick a to-do step that lifts them (rescore.mjs)
   noReplyDays: 14,              // an application with no news for this many days shows as "No reply" (computed in the app)
   availabilityCheckHours: 20,   // re-check open listings at most this often
   browserChannel: "msedge",
@@ -88,6 +89,7 @@ export function loadConfig() {
     tailor: { enabled: true, minScore: 0, target: s.tailorTarget, maxPasses: s.tailorMaxPasses, uploadToLinkedIn: s.uploadTailored },
     library: { everyDays: s.libraryEveryDays },
     availabilityCheckHours: s.availabilityCheckHours,
+    rescorePerRun: s.rescorePerRun,
     browserChannel: s.browserChannel,
   };
 }

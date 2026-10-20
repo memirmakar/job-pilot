@@ -133,7 +133,8 @@ export const EFFORT = { hours: "A few hours", days: "A few days", weeks: "A few 
 // Steps for the score that counts now: the tailored resume's when it's used
 export function raise(r) {
   const recs = (r.tailored?.used && r.tailored.recommendations?.length ? r.tailored.recommendations : r.ats?.recommendations) || [];
-  const items = recs.filter((x) => x.action).map((x) => ({ ...x, gain: Math.max(0, Math.round(x.estimated_gain || 0)) }))
+  // i: the step's place among the job's steps, which is how the to-do list (todo.mjs) knows it
+  const items = recs.filter((x) => x.action).map((x, i) => ({ ...x, i, gain: Math.max(0, Math.round(x.estimated_gain || 0)) }))
     .sort((a, b) => b.gain / (HOURS[b.effort] || 60) - a.gain / (HOURS[a.effort] || 60));
   const now = scores(r).score;
   const potential = Math.min(100, now + items.reduce((s, x) => s + x.gain, 0));

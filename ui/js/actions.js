@@ -9,6 +9,7 @@ import { renderSettings, targetRows, readTargets } from "./screens/settings.js";
 import { renderOnboarding, obNext, OB } from "./screens/onboarding.js";
 import { JOB_ACTIONS, bindJobs } from "./screens/jobs/index.js";
 import { RES_ACTIONS, bindResumes } from "./screens/resumes/index.js";
+import { INS_ACTIONS, bindInsights } from "./screens/insights/index.js";
 
 const ACTIONS = {
   run: async () => { await api.startRun({}); toast("Run started. You'll see an Edge window working; leave it open."); await loadState(); },
@@ -58,11 +59,14 @@ const ACTIONS = {
   ...JOB_ACTIONS,
   // resumes screen
   ...RES_ACTIONS,
+  // insights screen (and the to-do marks on a job's raise card)
+  ...INS_ACTIONS,
 };
 
 export function bindEvents() {
   bindJobs();
   bindResumes();
+  bindInsights();
   document.addEventListener("click", async (e) => {
     if (!e.target.closest(".menu-wrap")) toggleMenu(false);
     const act = e.target.closest("[data-action]");
@@ -79,10 +83,6 @@ export function bindEvents() {
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#more-menu").hidden) { toggleMenu(false); $("#more-btn").focus(); } });
   document.addEventListener("change", async (e) => {
     if (e.target.id === "ob-li") { OB.linkedinDone = e.target.checked; return renderOnboarding(); }
-    const cb = e.target.closest("[data-todo]");
-    if (!cb) return;
-    S.DONE = await api.setTodo(cb.dataset.todo, cb.checked);
-    app.render();
   });
   document.addEventListener("input", (e) => {
     if (e.target.id !== "q") return;

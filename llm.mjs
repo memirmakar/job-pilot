@@ -156,8 +156,9 @@ manager would want to discuss in an interview. If a repo would only add keywords
 really beneficial for actual job hunting. Recommendations of type "github" can suggest improving an existing repo.`;
 
 // Scores the given resume files (default: everything in the resumes folder) against a job.
-export async function scoreResumes(job, files = loadResumes(), github = "") {
-  const prompt = `Resume files to read and score:\n${files.map((r) => `- ${r.file}: ${r.path}`).join("\n")}\n\n${PROFILE()}\n\n${JOB(job)}${github ? `\n\n${github}\n${GITHUB_SCORING}` : ""}`;
+// extra: more candidate context (rescore.mjs passes the to-do steps you marked done)
+export async function scoreResumes(job, files = loadResumes(), github = "", extra = "") {
+  const prompt = `Resume files to read and score:\n${files.map((r) => `- ${r.file}: ${r.path}`).join("\n")}\n\n${PROFILE()}${extra ? `\n\n${extra}` : ""}\n\n${JOB(job)}${github ? `\n\n${github}\n${GITHUB_SCORING}` : ""}`;
   const { data, usage } = await ask({ system: SCORER, prompt, schema: ScoreSchema });
   if (!files.some((r) => r.file === data.best_file)) {
     data.best_file = [...data.resumes].sort((a, b) => b.ats_score - a.ats_score)[0]?.file;
@@ -306,7 +307,7 @@ const RepoReviewSchema = {
       type: "array",
       items: {
         type: "object", additionalProperties: false,
-        required: ["name", "summary", "skills_demonstrated", "verdict", "critique", "to_make_it_valuable", "resume_line"],
+        required: ["name", "summary", "skills_demonstrated", "verdict", "critique", "to_make_it_valuable", "resume_line", "relevance", "field", "fixes", "pin"],
         properties: {
           name: { type: "string" },
           summary: { type: "string", description: "What the project actually is and does, from the README and code" },
@@ -315,6 +316,10 @@ const RepoReviewSchema = {
           critique: { type: "string", description: "Blunt assessment of depth, originality, quality and documentation" },
           to_make_it_valuable: { type: "string", description: "Concrete improvements that would make it worth showing an employer" },
           resume_line: { type: "string", description: "One truthful resume bullet for it, or empty if it shouldn't be on a resume" },
+          relevance: { type: "integer", minimum: 0, maximum: 100, description: "How much it matters to an employer in the candidate's target fields" },
+          field: { type: "string", description: "The target field it fits best, exactly as listed, or 'none of your fields'" },
+          fixes: { type: "array", items: { type: "string" }, description: "1-3 specific fixes, each one short sentence an employer would notice (no bullets, no bold)" },
+          pin: { type: "string", enum: ["pin", "maybe", "dont"], description: "Pin it on the GitHub profile: the strongest repo per target field gets pin; at most 6 pins in total" },
         },
       },
     },
@@ -332,6 +337,7 @@ Verdicts:
 - ats_padding: mainly adds keywords (exercises, tutorials, trivial or empty repos); not really beneficial for actual job hunting
 - not_relevant: unrelated to the target roles, whatever its quality
 Be accurate rather than harsh for its own sake.
+Target fields: ${(config.targets || []).map((t) => t.field).join("; ") || "(not specified)"}. Rate relevance to them, name the field it fits best, and plan the profile pins across all repos.
 Formatting of explanation fields (reasoning, summary, critique, honest_take, why, how_to_present, to_make_it_valuable): 2-4 short lines, each starting with "- ", with the key term of each line in **bold**. No long paragraphs.
 Reply only with the structured result.`;
   const prompt = repos.map((r) => `### ${r.name}\nURL: ${r.url}\nDescription: ${r.description}\nLanguages (bytes): ${JSON.stringify(r.languages)}\n` +
