@@ -93,7 +93,8 @@ async function processJob(page, pick, files, opts) {
     rec.externalUrl = await LIN.externalApplyUrl(page).catch(() => null);
     return S.finish(rec, "external", "Apply on the company's site; your tailored resume is ready to download");
   }
-  if (finalScore < config.llm.minAtsScore) return S.finish(rec, "resume_insufficient", `final ATS score ${finalScore} < ${config.llm.minAtsScore}`);
+  if (finalScore < config.llm.minAtsScore && opts.test) log(`  Test run: ignoring the cutoff (${finalScore} < ${config.llm.minAtsScore})`);
+  else if (finalScore < config.llm.minAtsScore) return S.finish(rec, "resume_insufficient", `final ATS score ${finalScore} < ${config.llm.minAtsScore}`);
   if (opts.mode === "analyze_only") return S.finish(rec, "ready_to_apply", "Analyze-only mode: review and apply yourself");
   // Held jobs get their form filled but wait for your OK (approval.mjs); holding never submits, so no daily limit
   const hold = holdReason(opts.mode, finalScore, config.tailor.target);
@@ -126,6 +127,10 @@ async function checkOpenListings(page, maxChecks = 80) {
 // ---------- the run ----------
 // mode: overrides settings.applyMode for this run (CLI --mode, used for dry-run tests)
 export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinity, noDoctor = false, noTracker = false, mode = config.mode } = {}) {
+  // Test mode (a dry run with --limit): at most 5 jobs, searching stops once there are enough fresh Easy Apply listings,
+  // only Easy Apply jobs are picked, and the cutoff is ignored so the hold/approve path can be tested on any job
+  const test = dryRun && Number.isFinite(limit);
+  if (test) limit = Math.min(limit, 5);
   const run = S.startRun(dryRun ? "dry-run" : "daily", { dryRun, onlyJob, mode });
   const started = Date.now();
   let stop = "", stopKind = "", resumeAt = null, ctx = null, page = null;
@@ -165,8 +170,10 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
       else {
         S.setPhase("collect");
         const handled = handledIds(), listings = new Map();
+        const enough = () => test && [...listings.values()].filter((c) => c.easyApply && !handled.has(c.id) && !c.alreadyApplied).length >= limit * 5;
         const collectAll = async () => {
           for (const t of config.targets) for (const term of t.searchTerms || []) for (const loc of config.locations) {
+            if (enough()) return log("Test run: enough listings, searching stops here.");
             log(`Searching "${term}"${loc ? ` in ${loc}` : ""}...`);
             for (const c of await LIN.collectListings(page, term, loc)) if (!listings.has(c.id)) listings.set(c.id, { ...c, targetField: t.field });
           }
@@ -183,7 +190,7 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
         const fresh = [...listings.values()].filter((c) => !handled.has(c.id) && !c.alreadyApplied);
         for (const c of fresh.filter((c) => titleExcluded(c.title, c.company)))
           S.writeLog({ site: "linkedin", id: c.id, title: c.title, company: c.company, url: `https://www.linkedin.com/jobs/view/${c.id}/`, status: "filtered", reason: "excluded title/company word" });
-        const candidates = fresh.filter((c) => !titleExcluded(c.title, c.company)).slice(0, 220).map((c) => ({ ...c, key: c.id }));
+        const candidates = fresh.filter((c) => !titleExcluded(c.title, c.company) && (!test || c.easyApply)).slice(0, 220).map((c) => ({ ...c, key: c.id }));
         log(`${listings.size} listings found, ${candidates.length} new candidates.`);
         if (candidates.length) {
           S.setPhase("select", `${candidates.length} candidates`);
@@ -207,7 +214,7 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
     for (const pick of picks) {
       if (Date.now() - started > config.maxRunMinutes * 60e3) { [stop, stopKind] = [`Stopped after ${config.maxRunMinutes} minutes, your time limit for a run.`, "time_limit"]; break; }
       try {
-        const r = await processJob(page, pick, files, { dryRun, mode });
+        const r = await processJob(page, pick, files, { dryRun, mode, test });
         consecutiveErrors = 0;
         if (r === "applied") outcome.applied++;
         if (r) outcome.analyzed++;
@@ -250,7 +257,7 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
       [stop, stopKind, resumeAt] = [`LinkedIn is limiting your account: ${e.message}. Paused to keep it safe.`, "linkedin_limit", nextScheduled(config.settings)];
       S.anomaly("linkedin_limit", e.message);
     }
-    else { [stop, stopKind] = [`Run failed: ${e.message}`, "crash"]; S.anomaly("crash", e.stack || e.message); }
+    else { [stop, stopKind] = [`Run failed: ${e.message.split("\n")[0].slice(0, 200)}`, "crash"]; S.anomaly("crash", e.stack || e.message); }
     log("\n" + stop);
   } finally {
     await ctx?.close().catch(() => {});
