@@ -7,8 +7,8 @@ import { renderResumes } from "./screens/resumes/index.js";
 import { renderInsights, INSIGHT_TABS } from "./screens/insights/index.js";
 import { renderActivity } from "./screens/activity/index.js";
 import { renderDoctor } from "./screens/doctor/index.js";
-import { renderSettings } from "./screens/settings.js";
-import { renderOnboarding } from "./screens/onboarding.js";
+import { renderSettings, SETTINGS_SECTIONS } from "./screens/settings/index.js";
+import { renderOnboarding } from "./screens/onboarding/index.js";
 
 // The segmented control, in order
 export const SECTIONS = [["jobs", "Jobs"], ["guidance", "Guidance"], ["resumes", "Resumes"], ["insights", "Insights"]];
@@ -20,8 +20,6 @@ const SCREENS = { jobs: renderJobs, guidance: renderGuidance, resumes: renderRes
 const ALIAS = { apps: "jobs", overview: "insights", log: "activity", github: "insights/github" };
 // Never re-render these underneath the user while they type
 export const FORM_VIEWS = new Set(["settings", "onboarding"]);
-// Screens rebuilt in jp- markup; the rest still render inside .legacy
-const REBUILT = new Set(["jobs", "guidance", "resumes", "insights", "activity", "doctor"]);
 
 // "insights/github" -> view "insights", sub "github"
 export function parse(hash) {
@@ -36,7 +34,10 @@ export function go(target, { push = true } = {}) {
   S.sub = view === "insights" ? (INSIGHT_TABS.some(([id]) => id === sub) ? sub : "pipeline") : S.sub;
   // #guidance/<conversation id>
   if (view === "guidance" && sub && /^[\w-]{1,80}$/.test(sub)) S.g.sel = sub;
-  const hash = "#" + view + (view === "insights" && S.sub !== "pipeline" ? "/" + S.sub : view === "guidance" && S.g.sel !== "weekly" ? "/" + S.g.sel : "");
+  // #settings/<section>
+  if (view === "settings") S.set.sec = SETTINGS_SECTIONS.some(([id]) => id === sub) ? sub : S.set.sec;
+  const hash = "#" + view + (view === "insights" && S.sub !== "pipeline" ? "/" + S.sub : view === "guidance" && S.g.sel !== "weekly" ? "/" + S.g.sel
+    : view === "settings" && S.set.sec !== "profiles" ? "/" + S.set.sec : "");
   if (push && hash !== location.hash) history.pushState(null, "", hash); else history.replaceState(null, "", hash);
   render();
   window.scrollTo(0, 0);
@@ -47,7 +48,6 @@ addEventListener("popstate", () => { if (S.view !== "onboarding") go(location.ha
 export function render() {
   app.renderNav();
   app.renderStatus(); // the bar reads run data too (problem states, waiting count)
-  $("#view").classList.toggle("legacy", !REBUILT.has(S.view));
   if (S.view === "onboarding") return renderOnboarding();
   (SCREENS[S.view] || renderJobs)();
 }

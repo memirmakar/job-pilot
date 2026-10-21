@@ -9,6 +9,8 @@ export const ago = (iso) => {
   const d = (Date.now() - Date.parse(iso)) / 864e5;
   return d < 1 ? "today" : d < 2 ? "1 day ago" : d < 14 ? `${Math.round(d)} days ago` : d < 60 ? `${Math.round(d / 7)} weeks ago` : `${Math.round(d / 30)} months ago`;
 };
+// One entry per line only (LinkedIn locations like "Istanbul, Türkiye" contain commas)
+export const rows = (s) => String(s || "").split(/\n+/).map((x) => x.trim()).filter(Boolean);
 export const lines = (s) => String(s || "").split(/[\n,;]+/).map((x) => x.trim()).filter(Boolean);
 export const pdfUrl = (p) => "/pdf?p=" + encodeURIComponent(p);
 
@@ -58,4 +60,11 @@ export const icon = (name, cls = "ico") => `<svg class="${cls}" viewBox="0 0 24 
   target: '<circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle>',
   copy: '<rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path>',
+  send: '<path d="M4 12l16-8-6 16-2-7z"></path>',
+  ban: '<circle cx="12" cy="12" r="9"></circle><path d="M5.6 5.6l12.8 12.8"></path>',
+  bell: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"></path>',
+  chart: '<path d="M5 20V10M12 20V4M19 20v-7"></path>',
+  monitor: '<rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path>',
+  github: '<path d="M9 19c-4 1.5-4-2-6-2.5M15 21v-3.5a3 3 0 0 0-.9-2.4c3-.3 6-1.5 6-6.6a5 5 0 0 0-1.4-3.6 4.7 4.7 0 0 0-.1-3.5s-1.1-.3-3.6 1.4a12.4 12.4 0 0 0-6.4 0C6.1 1.1 5 1.4 5 1.4a4.7 4.7 0 0 0-.1 3.5A5 5 0 0 0 3.5 8.5c0 5.1 3 6.3 6 6.6a3 3 0 0 0-.9 2.4V21"></path>',
+  sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path>',
 }[name] || ""}</svg>`;

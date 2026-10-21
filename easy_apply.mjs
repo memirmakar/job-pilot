@@ -32,7 +32,7 @@ async function fillStep(page, root, rec, files, { rejection = null, approved = f
     const { answers, usage } = await answerQuestions({
       job: rec, resumeFile: rec.chosenResume, resumePath: chosenPath(rec, files), fields: empty, previous: rec.steps.flatMap((s) => s.fields), rejection,
     });
-    S.addUsage(rec, usage);
+    S.addUsage(rec, usage, "answers");
     for (const f of empty) {
       const a = answers.find((x) => x.id === f.id);
       const entry = { label: f.label, kind: f.kind, options: f.options, source: "claude", value: a?.value ?? "", reasoning: a?.reasoning ?? "No answer returned", confidence: a?.confidence ?? "low" };

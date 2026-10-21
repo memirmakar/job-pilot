@@ -14,10 +14,12 @@ export const DEFAULT_SETTINGS = {
   // "auto" = submit Easy Apply jobs; "ask_below_target" = submit at or above tailorTarget, hold the rest for your OK;
   // "ask_all" = hold every Easy Apply job for your OK; "analyze_only" = analyze + tailor, you apply yourself
   applyMode: "auto",
-  dailyJobs: 20,                // jobs Claude picks and analyzes per day
+  dailyJobs: 20,                // jobs Claude picks and analyzes per day ("Pause runs after about N jobs a day")
+  weeklyJobs: 0,                // optional weekly cap on jobs analyzed (0 = off), for plans that also reset weekly
   dailyApplyLimit: 20,          // Easy Apply submissions per day
   scheduleTime: "10:00",
   scheduleEnabled: true,
+  scheduleDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], // days the scheduled task runs (all = daily)
   modelDaily: "sonnet",         // per-job work: picking, scoring, tailoring, answering
   modelWeekly: "opus",          // resume library, market review, GitHub review, doctor
   effort: "medium",
@@ -37,6 +39,7 @@ export const DEFAULT_SETTINGS = {
   browserChannel: "msedge",
   delaySeconds: [6, 15],
   claudePath: null,
+  notify: { run: true, needsYou: true, replies: true, errors: true }, // Windows toasts (run_notices.mjs)
 };
 
 export const APPLY_MODES = ["auto", "ask_below_target", "ask_all", "analyze_only"];

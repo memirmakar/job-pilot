@@ -9,7 +9,7 @@ const REPLY = new Set(["interview", "offer", "rejected"]);
 const DAY = 864e5;
 export const noReplyDays = () => S.META.noReplyDays ?? 14;
 const history = (r) => (r.statusHistory || []).filter((h) => AFTER.has(h.status));
-const lastActivity = (r) => Math.max(Date.parse(r.submittedAt || r.createdAt || 0), ...(r.statusHistory || []).map((h) => Date.parse(h.at) || 0));
+export const lastActivity = (r) => Math.max(Date.parse(r.submittedAt || r.createdAt || 0), ...(r.statusHistory || []).map((h) => Date.parse(h.at) || 0));
 
 // "Thu, Oct 22" (+ time when set)
 export const interviewDay = (d) => d ? new Date(d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "";

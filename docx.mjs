@@ -58,12 +58,13 @@ const PARTS = (r) => ({
   "word/styles.xml": STYLES,
 });
 
-// A ZIP archive: local headers + deflated data, then the central directory
-function zip(files) {
+// A ZIP archive: local headers + deflated data, then the central directory. files: { name: string | Buffer }
+// (also used by Settings > Data and privacy for the export and the backup before Delete my data)
+export function zip(files) {
   const locals = [], central = [];
   let offset = 0;
   for (const [name, content] of Object.entries(files)) {
-    const raw = Buffer.from(content, "utf8"), data = zlib.deflateRawSync(raw), fname = Buffer.from(name, "utf8");
+    const raw = Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8"), data = zlib.deflateRawSync(raw), fname = Buffer.from(name, "utf8");
     const crc = zlib.crc32(raw);
     const head = Buffer.alloc(30);
     head.writeUInt32LE(0x04034b50, 0); head.writeUInt16LE(20, 4); head.writeUInt16LE(0x0800, 6); head.writeUInt16LE(8, 8);

@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { DIR, DATA } from "./config.mjs";
+import { DIR, DATA, loadSettings } from "./config.mjs";
 
 export const LOG_FILE = path.join(DIR, "applications.csv");
 export const RECORDS_DIR = path.join(DATA, "applications");
@@ -51,14 +51,22 @@ export const appliedToday = () => readLog().filter((r) => r.status === "applied"
 export const analyzedToday = () => loadAllRecords().filter((r) => r.createdAt && localDay(r.createdAt) === localDay(Date.now())).length;
 
 // ---------- usage ----------
-export function addUsage(rec, u) {
+// kind: analyze | tailor | answers | select; the run keeps a total per kind (run.usage) for Settings > Claude usage
+export function addUsage(rec, u, kind = "analyze") {
   if (!u) return;
+  runUsage(kind, u);
   const t = (rec.usage ||= { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, costUsd: 0 });
   t.costUsd += u.costUsd || 0;
   t.input += u.input_tokens || 0;
   t.output += u.output_tokens || 0;
   t.cacheRead += u.cache_read_input_tokens || 0;
   t.cacheWrite += u.cache_creation_input_tokens || 0;
+}
+
+export function runUsage(kind, u) {
+  if (!current || !u) return;
+  const k = ((current.usage ||= {})[kind] ||= { calls: 0, costUsd: 0 });
+  k.calls++; k.costUsd += u.costUsd || 0;
 }
 
 // ---------- run status (read by the app while a run is going) ----------
@@ -85,7 +93,9 @@ export function log(line) {
 }
 
 // ---------- notifications ----------
-export function notify(title, text) {
+// kind: run | needsYou | replies | errors (settings.notify switches each one; all on by default); "test" always shows
+export function notify(title, text, kind = "run") {
+  if (kind !== "test" && loadSettings().notify?.[kind] === false) return;
   const esc = (s) => String(s).replace(/'/g, "''");
   const ps = `[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null;` +
     `$t = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);` +

@@ -78,8 +78,17 @@ export const approveJob = (site, id, answers) => call("/api/approve", { site, id
 export const skipJob = (site, id) => call("/api/skip", { site, id });
 export const sendNow = (site, id) => call("/api/send", { site, id });                                          // a real single-job run that submits
 
+// ----- settings (settings_routes.mjs) -----
+export const getUsage = () => call("/api/usage");                      // { days runs[{ at jobs costUsd kinds dryRun stopKind }] kinds[{ id n costUsd split }] totalUsd }
+export const getNever = () => call("/api/settings/never");             // { companies{ word: skipped }, titles{ word: skipped } }
+export const testNotify = () => call("/api/notify/test", {});
+export const exportUrl = "/api/export";                                 // a ZIP of data/, resumes/ and the log
+export const deleteData = () => call("/api/data/delete", { confirm: "DELETE" }); // backup first: { backup, failed[] }
+
 // ----- onboarding and accounts -----
 export const planSearch = (answers) => call("/api/onboarding/plan", answers);
+export const saveProgress = (p) => call("/api/onboarding/progress", p);
+export const checkGithub = (user) => call("/api/github/check", { user }); // { ok user name repos }
 export const finishOnboarding = (profile, settings) => call("/api/onboarding/save", { profile, settings });
 export const loginLinkedin = () => call("/api/login/linkedin", {});
 export const loginClaude = () => call("/api/login/claude", {});

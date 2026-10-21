@@ -49,7 +49,7 @@ function why(j) {
       const m = r.match(/(\d+)\s*<\s*(\d+)/), s = m ? m[1] : j.score, c = m ? m[2] : cutoff();
       return s != null ? `Below cutoff · ${s}, your cutoff is ${c}` : "Below cutoff";
     },
-    filtered: () => /excluded/i.test(r) || !r ? "On your never-apply list" : r,
+    filtered: () => { const w = r.match(/excluded (?:company|title word) "(.+)"/); return w ? `On your never-apply list · ${w[1]}` : /excluded/i.test(r) || !r ? "On your never-apply list" : r; },
     not_selected: () => "Claude didn't pick it: not a fit for your goals",
     already_applied: () => j.appliedBefore ? `Already applied on ${short(j.appliedBefore)}` : "Already applied",
     closed: () => "Listing closed · no longer accepting applications",

@@ -5,3 +5,4 @@ node_modules/
 applications.csv
 run.log
 .claude/
+backups/

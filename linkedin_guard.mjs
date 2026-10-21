@@ -24,11 +24,14 @@ export async function guard(page, res = null, { banner = false } = {}) {
   if (BANNER.test(top)) throw new LinkedInLimitError(`LinkedIn says: ${top.match(BANNER)[0]}`);
 }
 
+export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 // When the next scheduled run starts (for "paused until"); null when the schedule is off
 export function nextScheduled(settings, from = new Date()) {
   if (!settings?.scheduleEnabled || !/^\d\d:\d\d$/.test(settings.scheduleTime || "")) return null;
   const [h, m] = settings.scheduleTime.split(":").map(Number);
+  const days = settings.scheduleDays?.length ? settings.scheduleDays : DAYS;
   const d = new Date(from); d.setHours(h, m, 0, 0);
   if (d <= from) d.setDate(d.getDate() + 1);
+  for (let i = 0; i < 7 && !days.includes(DAYS[(d.getDay() + 6) % 7]); i++) d.setDate(d.getDate() + 1);
   return d.toISOString();
 }

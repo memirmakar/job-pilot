@@ -1,0 +1,73 @@
+/* Onboarding (canvas boards Onboarding, Onboarding-Profile): a dialog over a scrim, steps on the left. Tokens only.
+   Shares st-radio, st-chips, st-spin and st-x with settings.css. */
+.ob-scrim { position: fixed; inset: 0; z-index: 25; background: var(--scrim); display: flex; justify-content: center; align-items: flex-start; padding: 72px var(--space-4) var(--space-4); }
+.ob { width: min(1000px, 100%); height: min(772px, 100%); border-radius: var(--radius-xl); background: var(--surface); box-shadow: var(--shadow-float); display: flex; overflow: hidden; }
+.ob-nav { width: 280px; flex: none; padding: 24px 16px; background: var(--mantle); display: flex; flex-direction: column; gap: var(--space-4); overflow: auto; }
+.ob-brand { display: flex; align-items: center; gap: 10px; padding: 0 12px; font: 700 16px/20px var(--font-display); }
+.ob-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.ob-stepbtn { display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 10px 12px; border: 0; border-radius: var(--radius-md); background: transparent;
+  color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ob-stepbtn:hover:not(:disabled) { background: var(--surface-hover); }
+.ob-stepbtn[aria-current="step"] { background: var(--accent-soft); }
+.ob-stepbtn:disabled { cursor: default; opacity: .6; }
+.ob-stepbtn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.ob-stepbtn__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ob-stepbtn__label { font: 600 14px/20px var(--font-sans); }
+.ob-dot { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; font: 600 12px/1 var(--font-mono);
+  border: 1.5px solid var(--control-border); color: var(--text-tertiary); }
+.ob-dot--now { border-color: var(--accent); color: var(--accent-text); background: var(--surface); }
+.ob-dot--done { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.ob-dot--done .ico { stroke-width: 2.2; }
+.ob-nav__foot { margin: auto 12px 0; }
+
+.ob-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ob-head { flex: none; display: flex; flex-direction: column; gap: 4px; padding: 26px 24px 16px 32px; }
+.ob-head .meta { margin: 0; }
+.ob-head h2:focus { outline: none; }
+.ob-body { flex: 1; min-height: 0; overflow: auto; padding: 4px 32px 20px; display: flex; flex-direction: column; gap: 18px; }
+.ob-body p { margin: 0; }
+.ob-foot { flex: none; display: flex; align-items: center; gap: var(--space-2); padding: 14px 24px 14px 32px; border-top: 1px solid var(--separator); background: var(--mantle); }
+.ob-foot__note { margin-right: auto; }
+
+.ob-tile, .ob-file { display: flex; align-items: center; gap: var(--space-4); padding: 18px 20px; border-radius: var(--radius-lg); background: var(--mantle); }
+.ob-file { align-items: flex-start; padding: 14px 16px; }
+.ob-file + .ob-file { margin-top: 8px; }
+.ob-tile__ico { width: 44px; height: 44px; flex: none; border-radius: var(--radius-md); background: var(--fill); display: grid; place-items: center; color: var(--text-secondary); }
+.ob-tile__ico--acc { width: 40px; height: 40px; background: var(--accent-soft); color: var(--accent-text); }
+.ob-tile__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.ob-tile__title { font: 600 15px/20px var(--font-sans); }
+.ob-in { font: 700 16px/1 var(--font-display); }
+.ob-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.ob-sec { display: flex; flex-direction: column; gap: 8px; }
+.ob-drop { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; border: 1.5px dashed var(--control-border); border-radius: var(--radius-lg);
+  background: var(--mantle); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ob-drop:hover { border-color: var(--accent); }
+.ob-drop:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.ob-inline { display: flex; align-items: flex-end; gap: var(--space-2); flex-wrap: wrap; }
+.ob-inline .jp-field { flex: 1; min-width: 220px; }
+.ob-self { align-self: flex-start; }
+.ob-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; align-items: start; }
+.ob-grid2 > .jp-field > .jp-field { margin-top: var(--space-3); }
+.ob-goals { font-size: 15px; line-height: 22px; }
+.ob-plan { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.ob-prof { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: var(--radius-lg); background: var(--mantle); }
+.ob-prof__head { display: flex; align-items: flex-end; gap: var(--space-2); }
+.ob-prof__head .jp-field { flex: 1; }
+
+@media (max-width: 900px) {
+  .ob-scrim { padding: 0; }
+  .ob { height: 100%; border-radius: 0; flex-direction: column; }
+  .ob-nav { width: auto; padding: 12px; gap: 8px; flex: none; }
+  .ob-steps { flex-direction: row; overflow-x: auto; }
+  .ob-stepbtn { padding: 6px 8px; }
+  .ob-stepbtn__text .foot, .ob-nav__foot, .ob-brand { display: none; }
+  .ob-stepbtn:not([aria-current="step"]) .ob-stepbtn__text { display: none; }
+  .ob-head { padding: 16px 16px 10px; }
+  .ob-body { padding: 4px 16px 16px; }
+  .ob-foot { padding: 12px 16px; flex-wrap: wrap; }
+  .ob-foot__note { width: 100%; }
+  .ob-grid2, .ob-plan { grid-template-columns: minmax(0, 1fr); }
+  .ob-tile { flex-wrap: wrap; }
+}
+.ob-body .rich ul { margin: 6px 0 0; padding-left: 18px; }
+.ob-body .rich li { margin: 2px 0; }

@@ -29,7 +29,8 @@ function field(f, i) {
     ${f.reasoning && f.confidence !== "high" && !need ? `<span class="foot">${esc(f.reasoning)}</span>` : ""}</label>`;
 }
 
-export function openReview(k) {
+// preview: read-only example (Settings > Applying "See an example" on a job that isn't waiting): no Approve or Skip
+export function openReview(k, { preview = false } = {}) {
   const r = find(k); if (!r) return;
   const qa = heldAnswers(r), s = M.scores(r), [tText, tTone] = M.targetPill(s.score), t = r.tailored;
   const file = t?.used ? t.file : t?.baseFile || r.ats?.best_file || "";
@@ -48,7 +49,8 @@ export function openReview(k) {
       <div class="rv-list"><p class="cap">Claude's answers · edit any of them</p>
         ${qa.length ? qa.map(field).join("") : `<p class="foot">The form only asked what LinkedIn fills from your profile.</p>`}</div>
     </div>`,
-    actions: `<span class="foot rv-foot">Claude sends exactly what's here, then marks the job Applied.</span>
+    actions: preview ? `<span class="foot rv-foot">An example from ${esc(r.company)}. This is what a job waiting for your OK looks like; nothing here is sent.</span>
+      <button class="jp-btn" type="button" data-sheet-close>Close</button>` : `<span class="foot rv-foot">Claude sends exactly what's here, then marks the job Applied.</span>
       <button class="jp-btn" type="button" data-action="review-skip">Skip this job</button>
       <button class="jp-btn jp-btn--primary" type="button" data-action="review-approve">Approve and send</button>`,
   });

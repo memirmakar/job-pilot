@@ -7,6 +7,8 @@ resumes for each job, applies via Easy Apply where allowed, and explains every d
 
 ## Run and test
 - App: `node server.mjs` (opens http://127.0.0.1:4510). `PORT=4519 node server.mjs --no-open` runs a second copy for testing.
+- Onboarding and Delete my data are tested on a copy of the app with an empty `data/` (code files + `ui/` + a `node_modules` junction) started with
+  `JP_TEST_COPY=1`: it never touches Windows' scheduled task and starts no library build. Never on the real `data/`.
 - Install for users is `Install.cmd` only: no build step, no bundler, no framework. The UI is plain files served from `ui/`.
 - Checks: `node --check <file>` on every edited `.mjs`/`.js`; `node apply.mjs selftest` checks LinkedIn can be read.
 - Never start a real run while working on the UI ("Run now", "Run again" and "Send now" submit real applications). Stub `/api/run` and `/api/send`
@@ -20,7 +22,10 @@ resumes for each job, applies via Easy Apply where allowed, and explains every d
 |---|---|
 | `server.mjs` | HTTP server: `/api/*` routes, `/pdf`, and static files from `ui/` |
 | `apply.mjs` | CLI entry (`run`, `login`, `library`, `review`, `github`, `tracker`, `todo`, `rescore`, `selftest`, `doctor`) |
-| `pipeline.mjs` `linkedin.mjs` `llm.mjs` | daily run, LinkedIn DOM logic, Claude calls |
+| `pipeline.mjs` `tailor.mjs` `run_notices.mjs` | daily run; tailoring passes for one job; the end-of-run Windows toasts (`settings.notify`) |
+| `profiles.mjs` | search profiles: `profile.targets` + overrides resolved against the global profile/settings (`activeProfiles`, `profileFor`, `filesFor`, `workplaceParam`, per-profile applied today, jobs this week) |
+| `linkedin.mjs` `linkedin_form.mjs` | LinkedIn search, job pages and availability; the Easy Apply form helpers (re-exported by `linkedin.mjs`) |
+| `llm.mjs` `llm_daily.mjs` `llm_reviews.mjs` | Claude calls: `ask()`, scoring, tailoring, library; answering + picking; GitHub/market reviews, keyword audit, onboarding plan (all re-exported by `llm.mjs`) |
 | `easy_apply.mjs` | the Easy Apply form: submit, hold for your OK (`waiting_ok`), dry run, and sending approved jobs (`sendQueue`) |
 | `approval.mjs` `statuses.mjs` `status_routes.mjs` | Waiting for your OK (hold rule, approve/skip, approved answers); status history after Applied; `/api/status` `/api/approve` `/api/skip` `/api/send` |
 | `applied_sync.mjs` `linkedin_guard.mjs` | LinkedIn job tracker reader (once per run, read only); signed-out/limit checks after each navigation (`LinkedInLoginError`, `LinkedInLimitError`) |
@@ -31,10 +36,11 @@ resumes for each job, applies via Easy Apply where allowed, and explains every d
 | `resumes.mjs` `reupload.mjs` `resume_read.mjs` `resume_routes.mjs` | Resumes screen: listing with versions, staged uploads and new versions, Claude reading/checking resume files, `/api/resumes/*` routes |
 | `insights.mjs` `insights_routes.mjs` | Insights data the server works out (job fields, not-picked jobs, to-do items, job market numbers); `/api/insights` `/api/todo` `/api/todo/add` (`ids` to mark, or `items` = new steps from Guidance) |
 | `todo.mjs` `todo_group.mjs` `rescore.mjs` `market_snapshot.mjs` | to-do items from the market review + every job's raise steps (done/added marks, re-score flags); Claude merging new steps (incremental, cached); the run's re-score of flagged jobs; one market snapshot per run |
+| `settings_routes.mjs` `usage.mjs` `data_tools.mjs` | Settings + onboarding routes (settings/profile saving, the Windows scheduled task, onboarding plan/progress/finish, GitHub check, test toast, never-apply counts, `/api/usage`, `/api/export`, `/api/data/delete`); usage report; export ZIP and delete-with-backup (`backups/`) |
 | `answers.mjs` `docx.mjs` | standard answers (keys, migration out of facts, prompt text); `.docx` export and reading back (Node zlib only) |
 | `ui/index.html` | shell markup (top bar), loads the CSS and `js/main.js` |
-| `ui/styles/` | `tokens.css` (generated), `components.css` (design-system bundle, copy), `app.css` (canvas helpers + shell), `jobs.css` (Jobs screen), `resumes.css` (Resumes screen), `insights.css` (Insights screen), `legacy.css` (old screens) |
-| `ui/js/` | `main.js` boot · `api.js` every server call · `state.js` data + view state · `router.js` sections · `shell.js` top bar · `actions.js` all `data-action` handlers · `theme.js` · `util.js` · `legacy.js` old widgets |
+| `ui/styles/` | `tokens.css` (generated), `components.css` (design-system bundle, copy), `app.css` (canvas helpers + shell), `jobs.css` (Jobs screen), `resumes.css` (Resumes screen), `insights.css` (Insights screen), `guidance.css`, `activity.css` (Activity + Doctor), `settings.css` (Settings), `onboarding.css` (Onboarding) |
+| `ui/js/` | `main.js` boot · `api.js` every server call · `state.js` data + view state · `router.js` sections · `shell.js` top bar (+ `PHASE`, run phases in words) · `actions.js` all `data-action` handlers · `theme.js` · `util.js` (`rows()` = one entry per line; `lines()` also splits on commas) |
 | `ui/js/components/` | `score-ring` `status-pill` `tag` `list-row` `card` (+ callout) `sheet` (slide-over, or `center: true` dialog) `company-logo` `drop` (drag-and-drop files) `coach-text` (Claude's text + `[[job:|resume:|repo:|todo:id|label]]` links, used by Guidance and the Ask panel) |
 | `ui/js/screens/` | one file per screen, or a folder for big ones (`jobs/`, `resumes/`, `insights/`); table below |
 | `design/` | `tokens.json` (from the design system) and `gen-tokens.mjs` → `ui/styles/tokens.css` |
@@ -54,12 +60,18 @@ resumes for each job, applies via Easy Apply where allowed, and explains every d
   `rescore.mjs`, up to `rescorePerRun` (max 5) per run) and `rescored{at from to items}`. A re-score that lifts a `resume_insufficient` job to the cutoff makes it `ready_to_apply`.
 - `applications.csv`: tab-separated activity log `date site status id title company url reason`.
 - `data/settings.json`: `applyMode` (auto | ask_below_target | ask_all | analyze_only; unknown = analyze_only) `noReplyDays` `dailyJobs dailyApplyLimit scheduleEnabled scheduleTime modelDaily modelWeekly minAtsScore tailorTarget postedWithin tailorMaxPasses maxRunMinutes rescorePerRun claudePath …` (defaults in `config.mjs`).
-- `data/profile.json`: `name goalsText preferences locations workplace seniority targets[{field searchTerms why}] titleExclude companyExclude facts githubUser onboardedAt`,
+  Stage 6 adds `weeklyJobs` (0 = off; with `dailyJobs`, the "Pause runs after about N jobs a day / M a week" caps, counted across runs), `scheduleDays` ["Mon"…"Sun"]
+  (all = a daily trigger, else weekly on those days), `notify{run needsYou replies errors}` (Windows toasts, all on by default), `uploadTailored` (now switchable).
+- `data/profile.json`: `name goalsText preferences locations workplace seniority targets[{field searchTerms why on locations workplace resume tailorTarget minAtsScore dailyApplyLimit titleExclude}] titleExclude companyExclude facts githubUser onboardedAt`,
+  (a target is a search profile; `on: false` = not searched; every other key is an optional override, missing = the global value; `resume` = Resumes id `o:<file>` or `r:<field slug>`;
+  a profile's `titleExclude` adds to the global one; `workplace` other than all three adds LinkedIn's `f_WT` filter),
   `answers{salary military license notice travel relocation english: {tr en}}` (moved out of `facts` once by `config.mjs` `loadProfile()`; old text in `factsBeforeAnswers`).
   `config.profile` (what every prompt reads) = standard answers + remaining facts.
 - `data/resumes.json`: per original in `resumes/`: `name language fields defaultFor uploadedAt read{resume roles skills languages new_skills} history[{v at path note}]`.
   Old files of originals are in `data/resumes_history/<file>/v<N>-<file>`; same-name uploads archive first. Staged uploads wait in `data/staging/<token>/`.
-- `data/runs/current.json` (live run: `phase detail counts events anomalies pid`), `data/runs/<id>.json` (finished: `outcome{summary stop stopKind stoppedAt resumeAt} selection`), `*.log` task logs.
+- `data/runs/current.json` (live run: `phase detail counts events anomalies pid`), `data/runs/<id>.json` (finished: `outcome{summary stop stopKind stoppedAt resumeAt} selection usage{analyze|tailor|answers|select: {calls costUsd}}`), `*.log` task logs.
+  `costUsd` is Claude Code's API-price estimate, shown as an estimate, never a bill. Filtered log rows say which never-apply entry matched (`excluded company "X"` / `excluded title word "X"`).
+- `data/onboarding.json`: onboarding progress (step, reached, answers, the plan) so setup resumes where it stopped. `backups/`: the ZIP written before Delete my data.
   `stopKind`: linkedin_login | linkedin_limit | claude_limit | claude_login | time_limit | browser_closed | repeated_errors | crash | stopped (old runs: none).
   The Jobs problem states read it (`screens/jobs/track.js` `runProblem()`); a `current.json` left unfinished counts as a stopped run.
 - `data/market/review.json` (`review{headline verdict_points segments strengths gaps todo resume_fixes stop_doing}`, `stats`), `keyword_audit.json`.
@@ -91,8 +103,7 @@ resumes for each job, applies via Easy Apply where allowed, and explains every d
 - Theme: Mocha (`.jp-mocha`) by default, Latte (`.jp-latte`) on `<html>`; follows the system until the user flips the switch in More.
 - No emoji in new UI; icons are the 1.5px line set in `util.js` `icon()`. Sentence case. Text from the user's side.
 - Keep each file under ~300 lines. Screens render into `#view`; re-render through `app.render()`; all server calls via `api.js`.
-- Old screens still use `legacy.css` / `legacy.js` (scoped under `.legacy` on `#view`). When a stage rebuilds a screen, move it to jp- markup
-  and delete the legacy CSS/helpers nothing uses any more. After editing tokens.json, run `node design/gen-tokens.mjs`.
+- Every screen is jp- markup; there is no legacy CSS or JS any more. After editing tokens.json, run `node design/gen-tokens.mjs`.
 - After adding new files under `ui/`, nothing else is needed: the server serves them and the doctor backs up all of `ui/`.
 
 ## Screens → files → canvas boards
@@ -107,8 +118,8 @@ Design system: https://claude.ai/code/artifact/bd77b878-3e00-4d29-b225-02ce02531
 | Guidance | `screens/guidance/`: `index.js` (screen, actions, composer) `model.js` (data → words) `list.js` `chat.js` (messages, check-in card, action buttons, thinking) `context.js` (what Claude knows) `interview.js` (interview + plan) `act.js` (Claude calls with Cancel, confirm sheets for actions, rename/delete); `styles/guidance.css` | Guidance, Guidance-Interview |
 | Resumes | `screens/resumes/`: `index.js` (screen, actions, keys) `model.js` (data → rows, words) `list.js` `detail.js` `history.js` (changes, versions, jobs, defaults) `answers.js` `upload.js` `reupload.js`; `styles/resumes.css` | Resumes, Resumes-Original, Resumes-Answers, Resumes-Reupload, Resumes-Upload, Resumes-Latte |
 | Insights | `screens/insights/`: `index.js` (header, tabs, actions) `model.js` (data → words; `todoFor()` feeds the Jobs raise card) `pipeline.js` `todo.js` `gaps.js` `market.js` `github.js`; `styles/insights.css` | Insights, Insights-Todo, Insights-Gaps, Insights-Market, Insights-GitHub, Insights-Latte, Insights-Latte-Todo |
-| Settings | `screens/settings.js` | Settings, Settings-Applying, -Review, -Never, -Latte, -Schedule, -Notifications, -Privacy, -Usage |
-| Onboarding | `screens/onboarding.js` | Onboarding, Onboarding-Profile |
+| Settings | `screens/settings/`: `index.js` (sections, saving: `data-set` / `data-pset` fields save on change) `profiles.js` (search profile cards, defaults) `profile-sheets.js` (edit, delete, Ask Claude to suggest) `applying.js` (modes, limit, the Jobs review sheet as example) `never.js` `schedule.js` `notifications.js` `privacy.js` (accounts, export, delete) `usage.js` `usage-controls.js` (caps, models, CLI); `styles/settings.css` | Settings, Settings-Applying, -Review, -Never, -Latte, -Schedule, -Notifications, -Privacy, -Usage |
+| Onboarding | `screens/onboarding/`: `index.js` (steps, saved progress, finish) `steps.js` (Claude, resumes via Resumes' upload sheet, GitHub, goals, plan, LinkedIn, schedule); `styles/onboarding.css` | Onboarding, Onboarding-Profile |
 | Activity | `screens/activity/`: `index.js` (screen, actions, loads `/api/activity`) `model.js` (runs → words, skip reasons) `view.js`; `styles/activity.css`; server `activity.mjs` (runs + `applications.csv` rows + records; log rows before run files are "From the log" runs) via `activity_routes.mjs` | Activity, Activity-Stopped |
 | Doctor | `screens/doctor/`: `index.js` (screen, actions) `checks.js` (health checks → words) `history.js` (Ask the doctor, fix history, Undo); `styles/activity.css`; server `doctor_checks.mjs` (read-only checks; LinkedIn = one feed visit, saved to `data/doctor/linkedin_check.json`), `doctor.mjs` `undoReport()` (puts back only a report's `changedFiles`, sets `undoneAt`) | Doctor |
 
@@ -121,7 +132,10 @@ B-Board, C-Grid and C-Sheet are alternative layouts (sidebar, dock): reference o
 3. **Resumes** (done): originals, ready and tailored with versions, standard answers, upload, Export to edit (.docx) and re-upload checks.
 4. **Insights** (done): tabs Pipeline, To-do (merged steps, done → re-score next run, "Add to my to-do list" on the Jobs raise card), Skill gaps, Job market (snapshots per run), GitHub.
 5. **Guidance** (done): conversations (job ones shared with the Ask panel, Open in Guidance), coach chat with links and confirmed actions, context switches, weekly check-in, mock interview.
-6. **Settings + Onboarding**: search profiles, applying, never-apply list, schedule, notifications, privacy, usage; onboarding steps.
+6. **Settings + Onboarding** (done): search profiles with overrides read by the run, applying, never-apply list with skip counts, schedule (days), Windows toasts,
+   data and privacy (export, delete with backup), Claude usage (estimates, jobs a day/week caps, models); onboarding as a 7-step dialog; legacy code removed.
+
+All stages are done.
 7. **Activity + Doctor** (done): run history with stopped runs and per-job reasons, doctor health checks, fix history with Undo, Ask the doctor.
 
 Each stage: read only its boards, keep behavior working, delete the legacy code it replaces, check both themes, commit "Stage N: …".

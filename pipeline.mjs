@@ -1,10 +1,9 @@
 // The daily run: collect -> Claude picks -> analyze + tailor each -> apply (Easy Apply) or prepare (external)
 // -> archive closed listings -> weekly upkeep. Anomalies (no listings, unreadable pages, repeated errors) call the doctor.
 import fs from "node:fs";
-import path from "node:path";
 import config, { DIR } from "./config.mjs";
-import { loadResumes, scoreResumes, tailorResume, selectJobs, findClaude, ClaudeLoginError, ClaudeLimitError } from "./llm.mjs";
-import { renderResumePdf, closePdfBrowser } from "./resume_pdf.mjs";
+import { loadResumes, scoreResumes, selectJobs, findClaude, ClaudeLoginError, ClaudeLimitError } from "./llm.mjs";
+import { closePdfBrowser } from "./resume_pdf.mjs";
 import { loadGithub, githubBrief } from "./github.mjs";
 import { runMarketReview, reviewDue } from "./market.mjs";
 import { libraryDue, buildLibrary, libraryFiles } from "./library.mjs";
@@ -18,16 +17,23 @@ import { syncApplied } from "./applied_sync.mjs";
 import { saveSnapshot } from "./market_snapshot.mjs";
 import { rescoreFlagged } from "./rescore.mjs";
 import { groupTodo } from "./todo_group.mjs";
+import { activeProfiles, profileFor, filesFor, workplaceParam, appliedTodayFor, analyzedThisWeek } from "./profiles.mjs";
+import { tailorFor } from "./tailor.mjs";
+import { runNotices } from "./run_notices.mjs";
 import * as S from "./store.mjs";
 
 const { log } = S;
 let GH_BRIEF = "";
 
 // ---------- helpers ----------
-const ascii = (s) => String(s || "").normalize("NFKD").replace(/\p{M}/gu, "").replace(/ı/g, "i").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "");
-function titleExcluded(title, company) {
+// Never apply to: the reason a listing is skipped, or "". prof.titleExclude = the global title words plus the search profile's own.
+// The word is kept in the reason so Settings > Never apply to can count what each entry skipped.
+function titleExcluded(title, company, prof) {
   const t = norm(title), c = norm(company);
-  return config.titleExclude.some((k) => t.includes(norm(k))) || config.companyExclude.some((k) => c.includes(norm(k)));
+  const co = config.companyExclude.find((k) => c.includes(norm(k)));
+  if (co) return `excluded company "${co}"`;
+  const w = prof.titleExclude.find((k) => t.includes(norm(k)));
+  return w ? `excluded title word "${w}"` : "";
 }
 // Jobs we've already handled (a record exists, or the log says filtered/not picked/applied)
 function handledIds() {
@@ -36,35 +42,6 @@ function handledIds() {
   return ids;
 }
 
-// ---------- tailoring ----------
-async function tailorFor(rec, files) {
-  const T = config.tailor;
-  const base = rec.ats.resumes.find((r) => r.file === rec.ats.best_file);
-  const baseFile = files.find((f) => f.file === base.file);
-  const dir = path.join(DIR, "data", "tailored", `${rec.site}-${rec.id}`);
-  let best = null, previous = null, feedback = null;
-  for (let pass = 1; pass <= T.maxPasses; pass++) {
-    log(`  Tailoring resume (pass ${pass})...`);
-    const { resume, usage } = await tailorResume({ job: rec, baseFile: base.file, basePath: baseFile?.path, ats: base, feedback, previous, github: GH_BRIEF });
-    S.addUsage(rec, usage);
-    const file = `${ascii(resume.name)}_CV_${ascii(rec.title).slice(0, 40)}.pdf`;
-    const out = await renderResumePdf(resume, path.join(dir, `pass${pass}`, file));
-    const sc = await scoreResumes(rec, [{ file, path: out }]);
-    S.addUsage(rec, sc.usage);
-    const entry = sc.resumes[0];
-    log(`  Tailored resume scores ${entry.ats_score} (base ${base.ats_score})`);
-    const cand = { file, path: path.relative(DIR, out).replace(/\\/g, "/"), score: entry.ats_score, ats: entry, resume, pass, recommendations: sc.recommendations };
-    const improved = !best || cand.score > best.score;
-    if (improved) best = cand;
-    // stop when it's good enough, or when another pass didn't gain anything
-    if (cand.score >= T.target || (pass > 1 && !improved)) break;
-    previous = resume;
-    feedback = `score ${entry.ats_score}; still missing: ${entry.missing_keywords.join(", ")}. ${entry.reasoning}`;
-  }
-  rec.tailored = { ...best, baseFile: base.file, basePath: baseFile ? path.relative(DIR, baseFile.path).replace(/\\/g, "/") : null, baseScore: base.ats_score, used: best.score >= base.ats_score };
-  rec.chosenResume = rec.tailored.used ? best.file : base.file;
-  S.saveRecord(rec);
-}
 // ---------- one job ----------
 async function processJob(page, pick, files, opts) {
   const jp = await LIN.readJobPage(page, pick.id);
@@ -81,14 +58,19 @@ async function processJob(page, pick, files, opts) {
     description: await LIN.jobDescription(page), steps: [], warnings: [],
   };
   S.count("analyzed");
-  log("  Scoring resumes...");
-  rec.ats = await scoreResumes(rec, files, GH_BRIEF);
-  S.addUsage(rec, rec.ats.usage); delete rec.ats.usage;
+  // The search profile's own resume, cutoff, target and daily limit (profiles.mjs); missing values are the global ones
+  const prof = profileFor(config, pick.field, pick.targetField);
+  const use = filesFor(prof, files);
+  if (use.warning) rec.warnings.push(use.warning);
+  log(`  Profile ${prof.field}: target ${prof.target}, cutoff ${prof.cutoff}, ${prof.dailyLimit} a day${prof.own.length ? ` (own: ${prof.own.join(", ")})` : " (all defaults)"}`);
+  log(`  Scoring ${use.files.length === 1 ? use.files[0].file : "resumes"}...`);
+  rec.ats = await scoreResumes(rec, use.files, GH_BRIEF);
+  S.addUsage(rec, rec.ats.usage, "analyze"); delete rec.ats.usage;
   rec.chosenResume = rec.ats.best_file;
   log(`  Best base resume: ${rec.chosenResume} (ATS ${rec.ats.best_score})`);
   S.saveRecord(rec);
 
-  try { await tailorFor(rec, files); }
+  try { await tailorFor(rec, use.files, prof, GH_BRIEF); }
   catch (e) { if (e instanceof ClaudeLoginError || e instanceof ClaudeLimitError) throw e; rec.warnings.push(`Tailoring failed, used ${rec.chosenResume}: ${e.message}`); }
   const finalScore = rec.tailored?.used ? rec.tailored.score : rec.ats.best_score;
 
@@ -96,12 +78,13 @@ async function processJob(page, pick, files, opts) {
     rec.externalUrl = await LIN.externalApplyUrl(page).catch(() => null);
     return S.finish(rec, "external", "Apply on the company's site; your tailored resume is ready to download");
   }
-  if (finalScore < config.llm.minAtsScore && opts.test) log(`  Test run: ignoring the cutoff (${finalScore} < ${config.llm.minAtsScore})`);
-  else if (finalScore < config.llm.minAtsScore) return S.finish(rec, "resume_insufficient", `final ATS score ${finalScore} < ${config.llm.minAtsScore}`);
+  if (finalScore < prof.cutoff && opts.test) log(`  Test run: ignoring the cutoff (${finalScore} < ${prof.cutoff})`);
+  else if (finalScore < prof.cutoff) return S.finish(rec, "resume_insufficient", `final ATS score ${finalScore} < ${prof.cutoff}`);
   if (opts.mode === "analyze_only") return S.finish(rec, "ready_to_apply", "Analyze-only mode: review and apply yourself");
   // Held jobs get their form filled but wait for your OK (approval.mjs); holding never submits, so no daily limit
-  const hold = holdReason(opts.mode, finalScore, config.tailor.target);
+  const hold = holdReason(opts.mode, finalScore, prof.target);
   if (!hold && S.appliedToday() >= config.dailyLimit) return S.finish(rec, "ready_to_apply", "Daily application limit reached");
+  if (!hold && appliedTodayFor(prof.field) >= prof.dailyLimit) return S.finish(rec, "ready_to_apply", `Daily limit for the ${prof.field} profile reached`);
   try { return await easyApply(page, rec, files, { dryRun: opts.dryRun, easyBtn: jp.easyBtn, hold }); }
   finally { S.saveRecord(rec); }
 }
@@ -165,20 +148,24 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
 
     // 3. collect
     let picks = [];
-    if (onlyJob && !approved.length) picks = [{ id: onlyJob, key: onlyJob, field: config.targets[0]?.field || "Other", relevance: 10, reason: "requested" }];
+    const profiles = activeProfiles(config.profileData, config.settings);
+    if (onlyJob && !approved.length) picks = [{ id: onlyJob, key: onlyJob, field: profiles[0]?.field || "Other", relevance: 10, reason: "requested" }];
     else if (onlyJob) picks = [];
     else {
-      const quota = Math.min(config.dailyJobs - S.analyzedToday(), limit);
-      if (quota <= 0) { log(`Already analyzed ${config.dailyJobs} jobs today.`); }
+      // Claude usage caps: about N jobs a day (dailyJobs) and, optionally, M a week (weeklyJobs), counted across runs
+      const weekly = config.settings.weeklyJobs > 0 ? config.settings.weeklyJobs - analyzedThisWeek() : Infinity;
+      const quota = Math.min(config.dailyJobs - S.analyzedToday(), weekly, limit);
+      if (!profiles.length) log("No search profile is on. Turn one on in Settings > Search profiles.");
+      else if (quota <= 0) log(weekly <= 0 ? `Already analyzed about ${config.settings.weeklyJobs} jobs this week, your weekly cap. Runs continue on Monday.` : `Already analyzed ${config.dailyJobs} jobs today.`);
       else {
         S.setPhase("collect");
         const handled = handledIds(), listings = new Map();
         const enough = () => test && [...listings.values()].filter((c) => c.easyApply && !handled.has(c.id) && !c.alreadyApplied).length >= limit * 5;
         const collectAll = async () => {
-          for (const t of config.targets) for (const term of t.searchTerms || []) for (const loc of config.locations) {
+          for (const t of profiles) for (const term of t.searchTerms) for (const loc of t.locations) {
             if (enough()) return log("Test run: enough listings, searching stops here.");
-            log(`Searching "${term}"${loc ? ` in ${loc}` : ""}...`);
-            for (const c of await LIN.collectListings(page, term, loc)) if (!listings.has(c.id)) listings.set(c.id, { ...c, targetField: t.field });
+            log(`Searching "${term}"${loc ? ` in ${loc}` : ""}${workplaceParam(t.workplace) ? ` (${t.workplace.join(", ")})` : ""}...`);
+            for (const c of await LIN.collectListings(page, term, loc, { workplace: workplaceParam(t.workplace) })) if (!listings.has(c.id)) listings.set(c.id, { ...c, targetField: t.field });
           }
         };
         await collectAll();
@@ -186,19 +173,21 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
         if (!test) saveSnapshot(run.id, [...listings.values()]); // Job market trends
         if (!listings.size && !noDoctor && shouldAutoRun("No listings")) {
           S.anomaly("no_listings", "LinkedIn searches returned no listings at all");
-          const rep = await runDoctor({ reason: "No listings: every LinkedIn search returned zero results", context: JSON.stringify({ targets: config.targets, locations: config.locations, events: run.events.slice(-30) }, null, 1) });
+          const rep = await runDoctor({ reason: "No listings: every LinkedIn search returned zero results", context: JSON.stringify({ targets: profiles,  events: run.events.slice(-30) }, null, 1) });
           log(`Doctor: ${rep.fixed ? "fixed" : "not fixed"}. ${rep.needs_user || ""}`);
           if (rep.retry_run) await collectAll();
         }
         // 3. cheap filters, then Claude picks
         const fresh = [...listings.values()].filter((c) => !handled.has(c.id) && !c.alreadyApplied);
-        for (const c of fresh.filter((c) => titleExcluded(c.title, c.company)))
-          S.writeLog({ site: "linkedin", id: c.id, title: c.title, company: c.company, url: `https://www.linkedin.com/jobs/view/${c.id}/`, status: "filtered", reason: "excluded title/company word" });
-        const candidates = fresh.filter((c) => !titleExcluded(c.title, c.company) && (!test || c.easyApply)).slice(0, 220).map((c) => ({ ...c, key: c.id }));
+        const excluded = (c) => titleExcluded(c.title, c.company, profileFor(config, c.targetField));
+        for (const c of fresh.filter(excluded))
+          S.writeLog({ site: "linkedin", id: c.id, title: c.title, company: c.company, url: `https://www.linkedin.com/jobs/view/${c.id}/`, status: "filtered", reason: excluded(c) });
+        const candidates = fresh.filter((c) => !excluded(c) && (!test || c.easyApply)).slice(0, 220).map((c) => ({ ...c, key: c.id }));
         log(`${listings.size} listings found, ${candidates.length} new candidates.`);
         if (candidates.length) {
           S.setPhase("select", `${candidates.length} candidates`);
-          const sel = await selectJobs(candidates, quota);
+          const sel = await selectJobs(candidates, quota, profiles.map((t) => t.field));
+          S.runUsage("select", sel.usage);
           run.selection = { candidates: candidates.length, picked: sel.picks.length, skipped_summary: sel.skipped_summary };
           const byId = new Map(candidates.map((c) => [c.id, c]));
           picks = sel.picks.filter((p) => byId.has(p.key)).sort((a, b) => b.relevance - a.relevance).slice(0, quota)
@@ -280,7 +269,7 @@ export async function runDaily({ dryRun = false, onlyJob = null, limit = Infinit
     log(`Doctor: ${rep.fixed ? "fixed" : "could not fix"}. ${rep.needs_user || ""}`);
   }
   const summary = `${outcome.applied} applied, ${outcome.analyzed} analyzed${run.counts.archived ? `, ${run.counts.archived} archived` : ""}.`;
-  S.notify(stop ? "Job Pilot stopped early" : "Job Pilot finished", `${summary}${stop ? " " + stop : ""}`);
+  runNotices(run, summary, stop);
   log(`\nDone. ${summary}${stop ? " " + stop : ""}`);
   return S.endRun({ ...outcome, stop, stopKind: stop ? stopKind || "stopped" : "", stoppedAt: stop ? new Date().toISOString() : null, resumeAt, summary });
 }

@@ -4,6 +4,7 @@
 import config from "./config.mjs";
 import { scoreResumes, ClaudeLoginError, ClaudeLimitError } from "./llm.mjs";
 import { items } from "./todo.mjs";
+import { profileFor } from "./profiles.mjs";
 import * as S from "./store.mjs";
 
 const finalScore = (r) => Math.round(r.tailored?.used ? r.tailored.score : r.ats?.best_score ?? 0);
@@ -23,7 +24,7 @@ export async function rescoreFlagged(files, { github = "", max = config.rescoreP
     try {
       const from = finalScore(r);
       const ats = await scoreResumes(r, files, github, extra);
-      S.addUsage(r, ats.usage); delete ats.usage;
+      S.addUsage(r, ats.usage, "analyze"); delete ats.usage;
       r.ats = ats;
       if (r.tailored) { r.tailored.baseScore = ats.best_score; r.tailored.used = r.tailored.score >= ats.best_score; }
       r.chosenResume = r.tailored?.used ? r.tailored.file : ats.best_file;
@@ -31,7 +32,7 @@ export async function rescoreFlagged(files, { github = "", max = config.rescoreP
       r.rescored = { at: new Date().toISOString(), from, to, items: r.rescore.items };
       delete r.rescore;
       log(`  ${r.title} @ ${r.company}: ${from} → ${to}`);
-      if (r.status === "resume_insufficient" && to >= config.llm.minAtsScore) S.finish(r, "ready_to_apply", `Re-scored ${from} → ${to} after your to-do steps; review and apply`);
+      if (r.status === "resume_insufficient" && to >= profileFor(config, r.field).cutoff) S.finish(r, "ready_to_apply", `Re-scored ${from} → ${to} after your to-do steps; review and apply`);
       else S.saveRecord(r);
       n++;
     } catch (e) {

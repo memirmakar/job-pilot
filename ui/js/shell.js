@@ -2,11 +2,15 @@
 import { S, app } from "./state.js";
 import { $, esc, fmtDate, icon } from "./util.js";
 import { SECTIONS, MORE, go } from "./router.js";
-import { PHASE } from "./legacy.js";
 import { pill } from "./components/status-pill.js";
 import { isDark, getChoice } from "./theme.js";
 import { runProblem, waitingCount } from "./screens/jobs/track.js";
 import { time, shortDay } from "./screens/jobs/model.js";
+
+// What a running run is doing, in words (data/runs/current.json phase)
+export const PHASE = { preflight: "Getting ready", library: "Updating resume library", collect: "Searching LinkedIn", select: "Claude is picking jobs",
+  analyze: "Analyzing and applying", availability: "Checking listings are still open", "market review": "Updating market review", starting: "Starting",
+  "send approved": "Sending the jobs you approved", tracker: "Reading your LinkedIn job tracker" };
 
 export function renderNav() {
   const onboarding = S.view === "onboarding";

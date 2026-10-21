@@ -3,20 +3,20 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import { spawn, execFile } from "node:child_process";
-import { DIR, DATA, loadSettings, loadProfile, saveSettings, saveProfile, isOnboarded, DEFAULT_SETTINGS } from "./config.mjs";
+import { spawn } from "node:child_process";
+import { DIR, DATA, loadSettings, loadProfile, isOnboarded, DEFAULT_SETTINGS } from "./config.mjs";
 import { resumeRoutes } from "./resume_routes.mjs";
 import { statusRoutes } from "./status_routes.mjs";
 import { insightsRoutes } from "./insights_routes.mjs";
 import { activityRoutes } from "./activity_routes.mjs";
 import { coachRoutes } from "./coach_routes.mjs";
+import { settingsRoutes, scheduleInfo, onboardingProgress } from "./settings_routes.mjs";
 import { stage } from "./reupload.mjs";
 import { archiveOriginal } from "./resumes.mjs";
 
 const PORT = Number(process.env.PORT) || 4510;
 const RECORDS_DIR = path.join(DATA, "applications");
 const RUNS_DIR = path.join(DATA, "runs");
-const TASK_NAME = "Job Pilot daily run";
 fs.mkdirSync(RUNS_DIR, { recursive: true });
 fs.mkdirSync(path.join(DIR, "resumes"), { recursive: true });
 
@@ -46,29 +46,6 @@ function runState() {
   const cur = readJson(path.join(RUNS_DIR, "current.json"));
   const running = !!cur && cur.phase !== "done" && alive(cur.pid);
   return { running, current: cur };
-}
-
-// ---------- Windows scheduled task ----------
-function ps(script) {
-  return new Promise((resolve, reject) => execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script], { windowsHide: true },
-    (err, stdout, stderr) => (err ? reject(new Error(stderr || err.message)) : resolve(stdout.trim()))));
-}
-async function applySchedule({ scheduleEnabled, scheduleTime }) {
-  await ps(`Unregister-ScheduledTask -TaskName '${TASK_NAME}' -Confirm:$false -ErrorAction SilentlyContinue; Unregister-ScheduledTask -TaskName 'Job Auto-Apply (LinkedIn)' -Confirm:$false -ErrorAction SilentlyContinue`);
-  if (!scheduleEnabled) return "disabled";
-  const vbs = path.join(DIR, "launch.vbs");
-  await ps(`$a = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument '"${vbs}" run' -WorkingDirectory '${DIR}';` +
-    `$t = New-ScheduledTaskTrigger -Daily -At '${scheduleTime}';` +
-    `$s = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 3);` +
-    `Register-ScheduledTask -TaskName '${TASK_NAME}' -Action $a -Trigger $t -Settings $s -Description 'Job Pilot: daily job search, analysis and applications' | Out-Null`);
-  return "enabled";
-}
-async function scheduleInfo() {
-  try {
-    const out = await ps(`$t = Get-ScheduledTask -TaskName '${TASK_NAME}' -ErrorAction Stop; $i = $t | Get-ScheduledTaskInfo; "$($t.State)|$($i.NextRunTime)|$($i.LastRunTime)"`);
-    const [state, next, last] = out.split("|");
-    return { exists: true, state, next, last };
-  } catch { return { exists: false }; }
 }
 
 // ---------- Claude CLI ----------
@@ -130,7 +107,7 @@ const routes = {
   "GET /api/state": async (req, res, url) => {
     if (!claudeCache || url.searchParams.has("recheck")) claudeCache = await claudeInfo();
     json(res, {
-      onboarded: isOnboarded(), settings: loadSettings(), defaults: DEFAULT_SETTINGS, profile: loadProfile(),
+      onboarded: isOnboarded(), settings: loadSettings(), defaults: DEFAULT_SETTINGS, profile: loadProfile(), onboarding: onboardingProgress(), dir: DIR,
       claude: claudeCache, linkedinProfile: fs.existsSync(path.join(DIR, "browser_profile")),
       schedule: await scheduleInfo(), run: runState(), tasks: taskStatus(), resumes: resumes(),
     });
@@ -181,34 +158,6 @@ const routes = {
     if (fs.existsSync(p)) fs.renameSync(p, path.join(DATA, `removed-${Date.now()}-${path.basename(p)}`)); // kept, not deleted
     json(res, resumes());
   },
-  "POST /api/onboarding/plan": async (req, res) => {
-    const b = await body(req);
-    const { planTargets, loadResumes } = await fresh("llm.mjs");
-    try { json(res, await planTargets({ goals: b.goals, locations: b.locations || [], workplace: b.workplace || [], seniority: b.seniority, extra: b.extra, resumes: loadResumes() })); }
-    catch (e) { json(res, { error: e.message }, 500); }
-  },
-  "POST /api/onboarding/save": async (req, res) => {
-    const b = await body(req);
-    const prev = loadProfile() || {};
-    saveProfile({ ...prev, ...b.profile, onboardedAt: prev.onboardedAt || new Date().toISOString() });
-    const s = saveSettings(b.settings || {});
-    let schedule = "";
-    try { schedule = await applySchedule(s); } catch (e) { schedule = `failed: ${e.message}`; }
-    try { startTask("library", ["library"]); } catch {}
-    json(res, { ok: true, schedule });
-  },
-  "POST /api/profile": async (req, res) => { const b = await body(req); json(res, saveProfile({ ...(loadProfile() || {}), ...b })); },
-  "POST /api/settings": async (req, res) => {
-    const b = await body(req);
-    const before = loadSettings();
-    const s = saveSettings(b);
-    let schedule = null;
-    if (s.scheduleEnabled !== before.scheduleEnabled || s.scheduleTime !== before.scheduleTime || b.reapplySchedule) {
-      try { schedule = await applySchedule(s); } catch (e) { schedule = `failed: ${e.message}`; }
-    }
-    json(res, { settings: s, schedule });
-  },
-
   // ----- actions -----
   "POST /api/run": async (req, res) => {
     const b = await body(req);
@@ -265,7 +214,8 @@ const routes = {
 
 Object.assign(routes, resumeRoutes({ body, json }), statusRoutes({ body, json, startTask, running: () => runState().running }), insightsRoutes({ body, json }),
   activityRoutes({ body, json, startTask, browserBusy: () => runState().running || !!(tasks.login && alive(tasks.login.pid)) }),
-  coachRoutes({ body, json, running: () => runState().running }));
+  coachRoutes({ body, json, running: () => runState().running }),
+  settingsRoutes({ body, json, send, startTask, running: () => runState().running || Object.values(tasks).some((t) => alive(t.pid)) }));
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);

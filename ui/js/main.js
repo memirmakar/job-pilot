@@ -4,13 +4,14 @@ import { parse, load, FORM_VIEWS } from "./router.js";
 import { renderMenu } from "./shell.js";
 import { bindEvents } from "./actions.js";
 import { applyTheme, watchSystem } from "./theme.js";
-import { OB, renderOnboarding } from "./screens/onboarding.js";
+import { onboardingTick } from "./screens/onboarding/index.js";
 
 applyTheme();
 watchSystem(renderMenu);
 Object.assign(S, parse(location.hash.slice(1)));
 // #guidance/<conversation id> opens that conversation
 if (S.view === "guidance" && S.sub) { S.g.sel = S.sub; S.g.open = true; S.sub = "pipeline"; }
+if (S.view === "settings" && S.sub) S.set.sec = S.sub;
 if (!S.sub) S.sub = "overview";
 bindEvents();
 
@@ -21,7 +22,7 @@ async function tick() {
     await loadState();
     const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
     if (!FORM_VIEWS.has(S.view) && !typing && (isBusy() || Date.now() - lastFull > 30e3)) { lastFull = Date.now(); await load(); }
-    else if (S.view === "onboarding" && OB.step === 0 && !typing) renderOnboarding();
+    else if (S.view === "onboarding" && !typing) onboardingTick();
   } catch {}
   setTimeout(tick, isBusy() ? 5000 : 30000);
 }

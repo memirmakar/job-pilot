@@ -18,6 +18,8 @@ export const S = {
   // Claude calls in flight from this page { cid: { what, ctrl, at } }, drafts and errors per conversation, actions done this session,
   // the goals draft, phone list/chat, and whether the weekly view shows earlier check-ins
   g: { list: null, serverPending: {}, sel: "weekly", convs: {}, pending: {}, drafts: {}, errors: {}, done: {}, goals: null, open: false, history: false, deep: false },
+  // Settings: the section, and data only it loads (Claude usage, never-apply counts)
+  set: { sec: "profiles", usage: null, never: null },
 };
 
 // Hooks the router fills in, so screens can re-render without importing the router
