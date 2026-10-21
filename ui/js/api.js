@@ -1,8 +1,11 @@
 // Every call the UI makes to server.mjs. Screens import these instead of calling fetch directly.
-async function call(url, body) {
-  const r = await fetch(url, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+// signal: an AbortSignal (Guidance's Cancel); an aborted call throws an error with .cancelled
+async function call(url, body, signal) {
+  let r;
+  try { r = await fetch(url, body === undefined ? { signal } : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal }); }
+  catch (e) { if (e.name === "AbortError") throw Object.assign(new Error("Cancelled"), { cancelled: true }); throw e; }
   const j = await r.json().catch(() => ({}));
-  if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+  if (!r.ok || j.error) throw Object.assign(new Error(j.error || `HTTP ${r.status}`), { cancelled: !!j.cancelled });
   return j;
 }
 
@@ -27,6 +30,20 @@ export const getConversation = (site, id) => call(`/api/conversation?site=${enco
 
 // ----- Ask Claude about a job -----
 export const askAboutJob = (site, id, message) => call("/api/ask", { site, id, message }); // the whole conversation after Claude's reply
+
+// ----- Guidance (coach_routes.mjs) -----
+export const getCoach = () => call("/api/coach");                                          // { list[], pending{ cid: { what at } } }
+export const getCoachConv = (cid) => call("/api/coach/conv?cid=" + encodeURIComponent(cid)); // conversation + shownJobs[]
+export const coachNew = (title) => call("/api/coach/new", { title });
+export const coachSend = (cid, text, weekly, signal) => call("/api/coach/send", { cid, text, weekly }, signal); // the conversation after Claude's reply
+export const coachCancel = (cid) => call("/api/coach/cancel", { cid });
+export const coachRename = (cid, title) => call("/api/coach/rename", { cid, title });
+export const coachDelete = (cid) => call("/api/coach/delete", { cid });
+export const coachContext = (cid, patch) => call("/api/coach/context", { cid, patch });     // switches: { goals resumes github jobs market off[] }
+export const coachCheckin = (signal) => call("/api/coach/checkin", {}, signal);
+export const coachResumeEdit = (b) => call("/api/coach/resume-edit", b);                   // { id, find, replace } -> Resumes' check result
+export const coachInterview = (b, signal) => call("/api/coach/interview", b, signal);      // { cid, op: start|answer|skip|lang|end, lang?, text? }
+export const addTodoItems = (items) => call("/api/todo/add", { items });                   // new steps from Guidance -> { state, ids }
 
 // ----- runs and background tasks -----
 export const startRun = (opts = {}) => call("/api/run", opts);  // { dryRun?, limit? }

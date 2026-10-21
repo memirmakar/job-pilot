@@ -47,7 +47,7 @@ function detail(it, count) {
           <span class="jp-num td-job__before">${l.before}</span>
           ${l.after == null ? "" : `${icon("arrow", "ico ico--14 td-job__arrow")}<span class="jp-num td-job__after">${l.after}</span>`}
           <span class="foot td-job__note">${esc(l.note)}</span></button>`; }).join("")}</div>`
-        : it.market ? "" : `<p class="foot">The jobs this step came from are archived.</p>`}
+        : it.market ? "" : it.custom ? `<p class="foot">You added this step from Guidance.</p>` : `<p class="foot">The jobs this step came from are archived.</p>`}
     </div>
     <div class="td-detail__foot">
       <button class="jp-btn${it.done ? "" : " jp-btn--primary"}" type="button" data-action="ins-todo-done" data-id="${esc(it.id)}" data-v="${it.done ? "0" : "1"}">${it.done ? "Mark as not done" : "Mark as done"}</button>

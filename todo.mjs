@@ -40,6 +40,9 @@ export function sources(records = loadAllRecords(), review = readJson(REVIEW_FIL
     out.set(key, { key, from: "job", job: `${r.site}-${r.id}`, text: x.action, kind: x.type, effort: x.effort, hours: HOURS[x.effort] ?? 60,
       gain: Math.max(0, Math.round(x.estimated_gain || 0)), why: x.why });
   }
+  // Steps you added from Guidance (a coach answer, a mock interview's practice list): state.custom{ "c:<hash>": { title why hours kind at } }
+  for (const [key, c] of Object.entries(loadState().custom || {})) if (!out.has(key)) out.set(key, {
+    key, from: "you", text: c.title, kind: c.kind || "practice", hours: c.hours || 1, why: c.why || "", gain: 0 });
   return out;
 }
 export const loadGroups = () => readJson(GROUPS_FILE, { at: null, groups: [] });
@@ -48,8 +51,8 @@ export const loadGroups = () => readJson(GROUPS_FILE, { at: null, groups: [] });
 // v1 was { "<market todo title>": doneAt }; those move to item ids in items() (titles no item has stay in legacy)
 export function loadState() {
   const raw = readJson(STATE_FILE, {});
-  if (raw.v === 2) return { done: {}, added: {}, legacy: {}, ...raw };
-  return { v: 2, done: {}, added: {}, legacy: { ...raw } };
+  if (raw.v === 2) return { done: {}, added: {}, legacy: {}, custom: {}, ...raw };
+  return { v: 2, done: {}, added: {}, legacy: { ...raw }, custom: {} };
 }
 export const saveState = (st) => write(STATE_FILE, st);
 
@@ -92,8 +95,27 @@ function build(g, src, st) {
     value: points + (market ? IMPACT_POINTS[market.impact] || 0 : 0),
     jobs: [...jobs.values()].sort((a, b) => b.gain - a.gain),
     market: market ? { steps: market.steps, doneWhen: market.doneWhen, unlocks: market.unlocks } : null,
+    custom: members.every((m) => m.from === "you"),
     done: st.done[g.id] || null, added: st.added[g.id] || null,
   };
+}
+
+// New steps from Guidance: [{ title, why, hours, kind }] -> saved and marked as yours. Returns { state, ids }.
+export function addCustom(list) {
+  const st = loadState(), ids = [];
+  for (const c of list) {
+    const title = String(c.title || "").trim().slice(0, 200);
+    if (!title) continue;
+    const key = "c:" + hash(title);
+    st.custom[key] ||= { title, why: String(c.why || "").slice(0, 600), hours: Math.min(200, Math.max(0.25, Number(c.hours) || 1)),
+      kind: String(c.kind || "practice").slice(0, 30), at: new Date().toISOString() };
+    // its id: the merged group it already joined, else the loose id (identical text to a job step joins that step)
+    const id = loadGroups().groups.find((g) => g.keys.includes(key))?.id || looseId(title);
+    st.added[id] ||= new Date().toISOString();
+    ids.push(id);
+  }
+  saveState(st);
+  return { state: st, ids };
 }
 
 // Ticks an item done (or not). Done flags the jobs it lifts that you haven't applied to: rec.rescore{ at, items[] }.

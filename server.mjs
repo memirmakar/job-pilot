@@ -9,6 +9,7 @@ import { resumeRoutes } from "./resume_routes.mjs";
 import { statusRoutes } from "./status_routes.mjs";
 import { insightsRoutes } from "./insights_routes.mjs";
 import { activityRoutes } from "./activity_routes.mjs";
+import { coachRoutes } from "./coach_routes.mjs";
 import { stage } from "./reupload.mjs";
 import { archiveOriginal } from "./resumes.mjs";
 
@@ -263,7 +264,8 @@ const routes = {
 };
 
 Object.assign(routes, resumeRoutes({ body, json }), statusRoutes({ body, json, startTask, running: () => runState().running }), insightsRoutes({ body, json }),
-  activityRoutes({ body, json, startTask, browserBusy: () => runState().running || !!(tasks.login && alive(tasks.login.pid)) }));
+  activityRoutes({ body, json, startTask, browserBusy: () => runState().running || !!(tasks.login && alive(tasks.login.pid)) }),
+  coachRoutes({ body, json, running: () => runState().running }));
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);

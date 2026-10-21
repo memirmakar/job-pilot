@@ -14,6 +14,10 @@ export const S = {
   // Insights: pipeline period and field, the selected to-do step, which steps the list shows, hidden steps shown
   ins: { period: "week", field: "all", step: null, list: "all", showHidden: false },
   res: { sel: null, filter: "all", query: "", kind: "all", open: false, editing: [], drafts: {} },
+  // Guidance: the conversation list, the selected conversation id ("new" = not created yet), loaded conversations,
+  // Claude calls in flight from this page { cid: { what, ctrl, at } }, drafts and errors per conversation, actions done this session,
+  // the goals draft, phone list/chat, and whether the weekly view shows earlier check-ins
+  g: { list: null, serverPending: {}, sel: "weekly", convs: {}, pending: {}, drafts: {}, errors: {}, done: {}, goals: null, open: false, history: false, deep: false },
 };
 
 // Hooks the router fills in, so screens can re-render without importing the router

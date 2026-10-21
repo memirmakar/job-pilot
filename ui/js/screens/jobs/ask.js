@@ -1,10 +1,11 @@
 // Ask Claude about this job (canvas board A-Ask): a slide-over chat with the job as context.
-// Conversations are saved by the server in data/conversations/<site>-<id>.json (conversations.mjs).
+// Conversations are saved by the server in data/conversations/<site>-<id>.json (conversations.mjs): the same conversation Guidance shows.
 import { S, app } from "../../state.js";
 import * as api from "../../api.js";
 import { $, esc, icon } from "../../util.js";
 import { tag } from "../../components/tag.js";
 import { callout } from "../../components/card.js";
+import { coachText } from "../../components/coach-text.js";
 import * as M from "./model.js";
 
 // key -> { messages, loaded, pending, error }; kept across re-renders and job switches
@@ -13,7 +14,8 @@ const conv = (k) => (CONV[k] ||= { messages: [], loaded: false, pending: null, e
 
 export async function openAsk(r) {
   const c = conv(M.keyOf(r));
-  if (!c.loaded) {
+  // reloaded each time it opens: Guidance may have added to it
+  if (!c.pending) {
     try { c.messages = (await api.getConversation(r.site, r.id)).messages || []; c.loaded = true; }
     catch (e) { c.error = `Couldn't load the earlier conversation: ${e.message}`; }
   }
@@ -32,7 +34,8 @@ export async function sendAsk(r, text) {
   if (S.panel === "ask" && S.selected === k) $("#ask-input")?.focus();
 }
 
-const bubble = (who, text) => `<div class="bubble bubble--${who === "user" ? "me" : "claude"}">${esc(text).replace(/\n/g, "<br>")}</div>`;
+const bubble = (who, text) => who === "user" ? `<div class="bubble bubble--me">${esc(text).replace(/\n/g, "<br>")}</div>`
+  : `<div class="bubble bubble--claude">${coachText(text)}</div>`;
 
 export function askHtml(r) {
   const c = conv(M.keyOf(r)), s = M.scores(r), gap = M.skills(r).missing[0];
@@ -41,6 +44,7 @@ export function askHtml(r) {
   return `<aside class="jd-ask" aria-label="Ask Claude about this job">
     <div class="jd-ask__head">
       <div class="jd-ask__title"><h3 class="t-headline">Ask Claude</h3><span class="meta ellip">About ${esc(r.title)} · ${esc(r.company)}</span></div>
+      <button class="jp-btn jp-btn--sm btn-icon" type="button" aria-label="Open in Guidance" title="Open in Guidance" data-action="open-in-guidance" data-k="${esc(M.keyOf(r))}">${icon("external")}</button>
       <button class="jp-btn jp-btn--sm btn-icon" type="button" aria-label="Close" data-action="panel-close">${icon("close")}</button>
     </div>
     <div class="jd-ask__sees"><span class="foot">Claude can see</span>${sees.map((x) => tag(x)).join("")}</div>

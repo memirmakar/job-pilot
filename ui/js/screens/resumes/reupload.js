@@ -57,7 +57,7 @@ const body = () => R.busy ? `${pickStep()}<p class="meta rs-wait"><span class="r
   : R.p ? resultStep() : pickStep();
 const actions = () => `<button class="jp-btn" type="button" data-sheet-close>Cancel</button>
   <button class="jp-btn jp-btn--primary" type="button" data-ru="use" ${R.p && !open() ? "" : "disabled"}>Use this version</button>`;
-const subtitle = () => R.p ? `${esc(R.file.name)} · edited outside Job Pilot · becomes <span class="jp-num">v${R.p.v}</span>` : `${esc(R.x.file)} · now <span class="jp-num">v${M.current(R.x).v}</span>`;
+const subtitle = () => R.p ? `${esc(R.file.name)} · ${R.guidance ? "suggested in Guidance" : "edited outside Job Pilot"} · becomes <span class="jp-num">v${R.p.v}</span>` : `${esc(R.x.file)} · now <span class="jp-num">v${M.current(R.x).v}</span>`;
 
 function paint() {
   if (!updateSheet({ title: R.p ? "Claude checked your new version" : "Upload a new version", subtitle: subtitle(), body: body(), actions: actions() })) return;
@@ -90,9 +90,12 @@ function onClick(e) {
   paint();
 }
 
-export function openReupload(x) {
-  R = { x, file: null, busy: false, error: "", p: null, choice: {} };
-  const el = openSheet({ center: true, lead, title: "Upload a new version", subtitle: subtitle(), body: body(), actions: actions(),
+// Guidance's "Suggest a resume edit": Claude's check already ran on the edited resume; open straight at the result
+export function openChecked(x, p) { openReupload(x, { file: { name: "Claude's suggested edit" }, p, guidance: true }); }
+
+export function openReupload(x, pre = {}) {
+  R = { x, file: null, busy: false, error: "", p: null, choice: {}, ...pre };
+  const el = openSheet({ center: true, lead, title: R.p ? "Claude checked your new version" : "Upload a new version", subtitle: subtitle(), body: body(), actions: actions(),
     onClose: () => { if (R?.p?.token) api.discardUpload(R.p.token).catch(() => {}); R = null; } });
   el.querySelector(".sheet").classList.add("sheet--narrow");
   el.addEventListener("click", onClick);

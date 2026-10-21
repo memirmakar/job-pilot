@@ -17,6 +17,12 @@ export function findClaude() {
 }
 const CLAUDE = findClaude();
 
+// Read-only calls run from an empty folder with no settings, MCP servers or skills, so the CLI does not load this repo's
+// CLAUDE.md or the user's setup into every prompt (about 19k tokens of cache creation per call before, about 2k after).
+// Read still opens the absolute paths the prompts give. Calls with wider tools (the doctor) keep the repo as cwd.
+const LIGHT_DIR = path.join(os.tmpdir(), "job-pilot-claude");
+const LIGHT_ARGS = ["--setting-sources", "", "--strict-mcp-config", "--disable-slash-commands"];
+
 export class ClaudeLoginError extends Error {}
 export class ClaudeLimitError extends Error {} // plan usage/session limit reached
 
@@ -36,8 +42,8 @@ export function loadResumes() {
 
 // ---------- Claude Code call ----------
 // Runs `claude -p` with a JSON schema for the reply. By default only the Read tool is available (to open resume files);
-// the doctor passes a wider tool set. `weekly: true` uses the weekly (stronger) model.
-export function ask({ system, prompt, schema, weekly = false, model, tools = ["Read"], permissionMode, timeoutMs = 5 * 60e3 }) {
+// the doctor passes a wider tool set. `weekly: true` uses the weekly (stronger) model. `signal` (AbortSignal) stops the call (Guidance's Cancel).
+export function ask({ system, prompt, schema, weekly = false, model, tools = ["Read"], permissionMode, timeoutMs = 5 * 60e3, signal }) {
   return new Promise((resolve, reject) => {
     if (!CLAUDE) return reject(new ClaudeLoginError("Claude Code CLI not found. Install it, then set its path in Settings if it isn't detected."));
     const args = [
@@ -51,9 +57,12 @@ export function ask({ system, prompt, schema, weekly = false, model, tools = ["R
       "--no-session-persistence",
       ...(permissionMode ? ["--permission-mode", permissionMode] : []),
     ];
-    const p = spawn(CLAUDE, args, { cwd: DIR, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+    const light = tools.every((t) => t === "Read");
+    if (light) { args.push(...LIGHT_ARGS); fs.mkdirSync(LIGHT_DIR, { recursive: true }); }
+    const p = spawn(CLAUDE, args, { cwd: light ? LIGHT_DIR : DIR, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
     let out = "", err = "";
     const timer = setTimeout(() => { p.kill(); reject(new Error(`Claude Code timed out after ${Math.round(timeoutMs / 60e3)} minutes`)); }, timeoutMs);
+    signal?.addEventListener("abort", () => { clearTimeout(timer); p.kill(); reject(Object.assign(new Error("Cancelled"), { cancelled: true })); }, { once: true });
     p.stdout.on("data", (d) => (out += d));
     p.stderr.on("data", (d) => (err += d));
     p.on("error", (e) => { clearTimeout(timer); reject(e); });

@@ -2,7 +2,7 @@
 import { S, app, loadState, loadData } from "./state.js";
 import { $ } from "./util.js";
 import { renderJobs } from "./screens/jobs/index.js";
-import { renderGuidance } from "./screens/guidance.js";
+import { renderGuidance } from "./screens/guidance/index.js";
 import { renderResumes } from "./screens/resumes/index.js";
 import { renderInsights, INSIGHT_TABS } from "./screens/insights/index.js";
 import { renderActivity } from "./screens/activity/index.js";
@@ -21,7 +21,7 @@ const ALIAS = { apps: "jobs", overview: "insights", log: "activity", github: "in
 // Never re-render these underneath the user while they type
 export const FORM_VIEWS = new Set(["settings", "onboarding"]);
 // Screens rebuilt in jp- markup; the rest still render inside .legacy
-const REBUILT = new Set(["jobs", "resumes", "insights", "activity", "doctor"]);
+const REBUILT = new Set(["jobs", "guidance", "resumes", "insights", "activity", "doctor"]);
 
 // "insights/github" -> view "insights", sub "github"
 export function parse(hash) {
@@ -34,7 +34,9 @@ export function go(target, { push = true } = {}) {
   S.view = view; S.filter = "all";
   // old #insights/overview links land on Pipeline
   S.sub = view === "insights" ? (INSIGHT_TABS.some(([id]) => id === sub) ? sub : "pipeline") : S.sub;
-  const hash = "#" + view + (view === "insights" && S.sub !== "pipeline" ? "/" + S.sub : "");
+  // #guidance/<conversation id>
+  if (view === "guidance" && sub && /^[\w-]{1,80}$/.test(sub)) S.g.sel = sub;
+  const hash = "#" + view + (view === "insights" && S.sub !== "pipeline" ? "/" + S.sub : view === "guidance" && S.g.sel !== "weekly" ? "/" + S.g.sel : "");
   if (push && hash !== location.hash) history.pushState(null, "", hash); else history.replaceState(null, "", hash);
   render();
   window.scrollTo(0, 0);
