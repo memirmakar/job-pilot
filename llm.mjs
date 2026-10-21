@@ -17,6 +17,12 @@ export function findClaude() {
 }
 const CLAUDE = findClaude();
 
+// Read-only calls run from an empty folder with no settings, MCP servers or skills, so the CLI does not load this repo's
+// CLAUDE.md or the user's setup into every prompt (about 19k tokens of cache creation per call before, about 2k after).
+// Read still opens the absolute paths the prompts give. Calls with wider tools (the doctor) keep the repo as cwd.
+const LIGHT_DIR = path.join(os.tmpdir(), "job-pilot-claude");
+const LIGHT_ARGS = ["--setting-sources", "", "--strict-mcp-config", "--disable-slash-commands"];
+
 export class ClaudeLoginError extends Error {}
 export class ClaudeLimitError extends Error {} // plan usage/session limit reached
 
@@ -51,7 +57,9 @@ export function ask({ system, prompt, schema, weekly = false, model, tools = ["R
       "--no-session-persistence",
       ...(permissionMode ? ["--permission-mode", permissionMode] : []),
     ];
-    const p = spawn(CLAUDE, args, { cwd: DIR, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+    const light = tools.every((t) => t === "Read");
+    if (light) { args.push(...LIGHT_ARGS); fs.mkdirSync(LIGHT_DIR, { recursive: true }); }
+    const p = spawn(CLAUDE, args, { cwd: light ? LIGHT_DIR : DIR, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
     let out = "", err = "";
     const timer = setTimeout(() => { p.kill(); reject(new Error(`Claude Code timed out after ${Math.round(timeoutMs / 60e3)} minutes`)); }, timeoutMs);
     signal?.addEventListener("abort", () => { clearTimeout(timer); p.kill(); reject(Object.assign(new Error("Cancelled"), { cancelled: true })); }, { once: true });
