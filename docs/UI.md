@@ -26,7 +26,7 @@ Click handlers are `data-action` attributes handled in `ui/js/actions.js`. Find 
 
 ## Components (`ui/js/components/`)
 `score-ring` `status-pill` (`STATUS`) `tag` `list-row` `card` (+ callout) `sheet` (slide-over, or `center: true` dialog) `company-logo` `drop` (drag-and-drop files)
-`coach-text` (Claude's text + `[[job:|resume:|repo:|todo:id|label]]` links). Style classes: `jp-btn` (`--primary --tinted --plain --danger --sm --lg`), `jp-seg`, `jp-pill--*`,
+`loading` (`loadingHtml(kind, what)` skeleton: split | three | page, slow line after 4 s in CSS; `loadFailedHtml(error, what, action)` with Try again) `coach-text` (Claude's text + `[[job:|resume:|repo:|todo:id|label]]` links). Style classes: `jp-btn` (`--primary --tinted --plain --danger --sm --lg`), `jp-seg`, `jp-pill--*`,
 `jp-tag` (`--met --missing`), `jp-card`, `jp-list` + `jp-row`, `jp-ring`, `jp-field` + `jp-input`, `jp-callout` (`--warning --danger`), `jp-bar`.
 
 ## Screens → files → canvas boards

@@ -36,6 +36,8 @@ export async function loadState(recheck = false) {
 export async function loadData() {
   const [data, log, meta, market, gh, lib, docs, runs, res, ins] = await Promise.all([
     api.getApplications(), api.getLog(), api.getMeta(), api.getMarket(), api.getGithub(), api.getLibrary(), api.getDoctor(), api.getRuns(), api.getResumes(), api.getInsights()]);
+  // a failing route answers { error }: say so instead of rendering it as data
+  for (const [d, what] of [[data, "your jobs"], [log, "your applications"], [meta, "your settings"]]) if (d?.error || !d) throw new Error(`Couldn't read ${what}: ${d?.error || "no answer"}`);
   Object.assign(S, { DATA: data, LOG: log, META: meta, MARKET: market.market, AUDIT: market.audit, STATS: market.stats,
     GH: gh, LIB: lib, DOCS: docs, RUNS: runs, RES: res?.error ? null : res, INS: ins?.error ? null : ins });
 }

@@ -1,6 +1,7 @@
 // Sections and hash routing. #jobs, #insights/github, … ; old hashes (#apps, #overview, #log, #github) still work.
 import { S, app, loadState, loadData } from "./state.js";
-import { $ } from "./util.js";
+import { $, toast } from "./util.js";
+import { loadingHtml, loadFailedHtml } from "./components/loading.js";
 import { renderJobs } from "./screens/jobs/index.js";
 import { renderGuidance } from "./screens/guidance/index.js";
 import { renderResumes } from "./screens/resumes/index.js";
@@ -45,19 +46,33 @@ export function go(target, { push = true } = {}) {
 // Back / forward and typed hashes (old bookmarks like #apps keep working)
 addEventListener("popstate", () => { if (S.view !== "onboarding") go(location.hash.slice(1), { push: false }); });
 
+// Skeleton shape and wording per screen
+const SKELETON = { jobs: ["split", "your jobs"], guidance: ["three", "Guidance"], resumes: ["split", "your resumes"], insights: ["page", "Insights"],
+  activity: ["split", "your runs"], doctor: ["page", "the health checks"], settings: ["page", "Settings"] };
+let ready = false; // the first load finished: from then on a refresh never replaces the screen
+const showLoading = () => { const [kind, what] = SKELETON[S.view] || SKELETON.jobs; $("#view").innerHTML = loadingHtml(kind, what); };
+
 export function render() {
   app.renderNav();
   app.renderStatus(); // the bar reads run data too (problem states, waiting count)
   if (S.view === "onboarding") return renderOnboarding();
+  if (!ready) return showLoading(); // switching screens before the first load finishes
   (SCREENS[S.view] || renderJobs)();
 }
 
 export async function load() {
-  await loadState();
-  if (!S.STATE.onboarded) { S.view = "onboarding"; app.renderNav(); return renderOnboarding(); }
-  if (S.view === "onboarding") S.view = "jobs";
-  await loadData();
-  render();
+  if (!ready) { app.renderNav(); showLoading(); }
+  try {
+    await loadState();
+    if (!S.STATE.onboarded) { ready = true; S.view = "onboarding"; app.renderNav(); return renderOnboarding(); }
+    if (S.view === "onboarding") S.view = "jobs";
+    await loadData();
+    ready = true;
+    render();
+  } catch (e) {
+    if (ready) return toast(`Couldn't refresh: ${String(e.message || e).slice(0, 120)}`);
+    $("#view").innerHTML = loadFailedHtml(e, (SKELETON[S.view] || SKELETON.jobs)[1]);
+  }
 }
 
 Object.assign(app, { render, load });

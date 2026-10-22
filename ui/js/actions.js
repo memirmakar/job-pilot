@@ -23,6 +23,7 @@ const ACTIONS = {
   "claude-login": async () => { await api.loginClaude(); toast("A Claude window opened: type /login, finish in your browser, close it, then press Check again.", 9000); },
   "linkedin-login": async () => { await api.loginLinkedin(); toast("An Edge window opened. Sign in to LinkedIn, then close it.", 8000); },
   archive: async (el) => { await api.setArchived(el.dataset.site, el.dataset.id, !!el.dataset.v); app.load(); },
+  "retry-load": () => app.load(),
   quit: async () => { if (!confirm("Quit Job Pilot? The scheduled daily run still happens.")) return; await api.quit(); document.body.innerHTML = `<div class="placeholder"><p class="t-headline">Job Pilot closed. Open it again from the desktop shortcut.</p></div>`; },
   // shell
   "insights-tab": (el) => go("insights/" + el.dataset.tab),

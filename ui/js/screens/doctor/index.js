@@ -5,20 +5,22 @@ import { $, esc, toast } from "../../util.js";
 import { pill } from "../../components/status-pill.js";
 import { allChecks } from "./checks.js";
 import { askHtml, historyHtml } from "./history.js";
+import { loadingHtml, loadFailedHtml } from "../../components/loading.js";
 import { time } from "../activity/model.js";
 
 // C: /api/doctor/checks; draft: the Ask text, kept across re-renders
-const V = { C: null, at: 0, loading: false, checking: false, draft: "" };
+const V = { C: null, error: null, at: 0, loading: false, checking: false, draft: "" };
 let last = "";
 
 function ensure() {
   if (V.loading || Date.now() - V.at < 15e3) return;
   V.loading = true;
-  api.getChecks().then((c) => { if (!c.error) V.C = c; }).catch(() => {})
+  api.getChecks().then((c) => { if (c.error) throw new Error(c.error); V.C = c; V.error = null; }).catch((e) => { if (!V.C) V.error = e; })
     .finally(() => { V.loading = false; V.at = Date.now(); if (S.view === "doctor") app.render(); });
 }
 
 export function renderDoctor() {
+  if (!V.C) { ensure(); const h = V.error ? loadFailedHtml(V.error, "the health checks", "doc-retry") : loadingHtml("page", "the health checks"); if (h !== last) $("#view").innerHTML = last = h; return; }
   ensure();
   if ($("#doc-problem")) V.draft = $("#doc-problem").value;
   const checks = allChecks(V.C), n = checks.filter((c) => c.tone === "danger").length;
@@ -53,6 +55,7 @@ function checkHtml(c) {
 
 const refresh = async () => { V.at = 0; await loadData(); app.render(); };
 export const DOC_ACTIONS = {
+  "doc-retry": () => { V.error = null; V.at = 0; last = ""; app.render(); },
   // Claude CLI answers once (a tiny Haiku call) and LinkedIn opens once in a hidden window
   "doc-check": async () => {
     V.checking = true; app.render();

@@ -3,23 +3,24 @@ import { S, app, loadState } from "../../state.js";
 import * as api from "../../api.js";
 import { $, toast } from "../../util.js";
 import { go } from "../../router.js";
+import { loadingHtml, loadFailedHtml } from "../../components/loading.js";
 import { activityHtml } from "./view.js";
 
 // open: the expanded run (null = the newest, "none" = all closed); sub: its job tab; full: runs showing every job
-const V = { runs: null, at: 0, loading: false, view: "all", open: null, sub: "all", full: new Set() };
+const V = { runs: null, error: null, at: 0, loading: false, view: "all", open: null, sub: "all", full: new Set() };
 let last = "";
 
 // The run history is loaded here, not with the rest: it's only needed on this screen. Refreshed with the app's tick.
 function ensure() {
   if (V.loading || Date.now() - V.at < 15e3) return;
   V.loading = true;
-  api.getActivity().then((runs) => { if (Array.isArray(runs)) V.runs = runs; }).catch(() => {})
+  api.getActivity().then((runs) => { if (Array.isArray(runs)) { V.runs = runs; V.error = null; } else throw new Error(runs?.error || "unexpected answer"); }).catch((e) => { if (!V.runs) V.error = e; })
     .finally(() => { V.loading = false; V.at = Date.now(); if (S.view === "activity") app.render(); });
 }
 
 export function renderActivity() {
   ensure();
-  if (!V.runs) { $("#view").innerHTML = last = `<div class="act"><p class="meta">Loading your runs…</p></div>`; return; }
+  if (!V.runs) { const h = V.error ? loadFailedHtml(V.error, "your runs", "act-retry") : loadingHtml("split", "your runs"); if (h !== last) $("#view").innerHTML = last = h; return; }
   if (V.open === null) V.open = V.runs[0]?.id || "none";
   const html = activityHtml(V.runs, V);
   if (html === last && $("#view .act")) return;
@@ -30,6 +31,7 @@ export function renderActivity() {
 
 const reload = () => { V.at = 0; ensure(); };
 export const ACT_ACTIONS = {
+  "act-retry": () => { V.error = null; last = ""; reload(); app.render(); },
   "act-view": (el) => { V.view = el.dataset.v; app.render(); },
   "act-toggle": (el) => { V.open = V.open === el.dataset.id ? "none" : el.dataset.id; V.sub = "all"; app.render(); },
   "act-sub": (el) => { V.sub = el.dataset.v; app.render(); },

@@ -7,6 +7,8 @@ Read this at the start of every task. Update it at the end: keep it short, repla
 - `master` holds everything. Two worktrees under `.claude/worktrees/` (stage 7, stage 5) are fully merged; safe to remove.
 - The user's real data is in `data/`, `resumes/` and `browser_profile/` (all git-ignored). Apply mode is `analyze_only`.
 
+- Loading states are in (router `load()` shows the skeleton until the first load; Activity and Doctor load their own data with the same skeleton and error). Guidance, Resumes and Settings' lazy lists still show short in-place "Loading…" text.
+
 ## Known issues
 - **Daily run isn't installed in Windows**: settings say on at 16:00, but no scheduled task exists ("Not scheduled" in the top bar). The user fixes it from Settings → Schedule.
 - **Test runs fail when Edge doesn't start**: `linkedin.mjs` `launch()` falls back to Playwright's Chromium, which isn't installed, and that error hides Edge's real one.

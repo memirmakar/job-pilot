@@ -2,6 +2,9 @@
 
 Newest first, one line per change a user would notice or a later session needs to know. Details live in the commit and in docs/.
 
+## 2026-10-23
+- Loading states: every screen shows a skeleton of its layout (Mocha and Latte) instead of a blank page, a calm "still loading" line after 4 s, and a failed load says what went wrong with a Try again button (`components/loading.js`).
+
 ## 2026-10-22
 - Resumes: "Ask Claude to change this resume" (checked like a re-upload, saved as a new version, "Also save as a rule"); Your resume rules (standing rules
   noted in "What Claude changed", photo with crop or taken from an original PDF, neutral file names with "Rename files to the new pattern", re-tailor unsent

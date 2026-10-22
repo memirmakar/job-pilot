@@ -122,16 +122,16 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: usageReport:12
 
 ## UI: boot, shell, state
-- `ui/js/actions.js` (85) Every [data-action] button, plus the page-wide click / change / input / tooltip handlers.
-  exports: bindEvents:50
+- `ui/js/actions.js` (86) Every [data-action] button, plus the page-wide click / change / input / tooltip handlers.
+  exports: bindEvents:51
 - `ui/js/api.js` (109) Every call the UI makes to server.mjs. Screens import these instead of calling fetch directly.
   exports: getState:16 getApplications:17 getLog:18 getMeta:19 getMarket:20 getInsights:21 getGithub:22 getLibrary:23 getDoctor:24 getRuns:25 getActivity:26 getChecks:27 getResumes:28 getConversation:29 askAboutJob:32 getCoach:35 getCoachConv:36 coachNew:37 coachSend:38 coachCancel:39 coachRename:40 coachDelete:41 coachContext:42 coachCheckin:43 coachResumeEdit:44 coachInterview:45 addTodoItems:46 startRun:49 stopRun:50 startTask:51 askDoctor:52 undoDoctor:53 checkLinkedin:54 uploadResumes:57 removeResume:58 stageResumes:60 readOriginal:61 readExisting:62 addOriginal:63 discardUpload:64 setResumeMeta:65 checkReupload:66 useReupload:67 saveAnswers:68 docxUrl:69 instructResume:70 saveResumeRules:71 addResumeRule:72 savePhoto:73 removePhoto:74 photosFrom:75 photoUrl:76 setProject:77 suggestProjects:78 renameResume:79 deleteResume:80 undoDelete:81 renameAllResumes:82 saveProfile:83 saveSettings:84 setTodo:85 addTodo:86 setArchived:87 setJobStatus:89 approveJob:90 skipJob:91 sendNow:92 getUsage:95 getNever:96 testNotify:97 exportUrl:98 deleteData:99 planSearch:102 saveProgress:103 checkGithub:104 finishOnboarding:105 loginLinkedin:106 loginClaude:107 quit:108
 - `ui/js/main.js` (30) Boot: theme, shell, events, first load, then the refresh loop.
-- `ui/js/router.js` (64) Sections and hash routing. #jobs, #insights/github, … ; old hashes (#apps, #overview, #log, #github) still work.
-  exports: SECTIONS:14 MORE:16 FORM_VIEWS:22 parse:25 go:30 render:48 load:55
+- `ui/js/router.js` (79) Sections and hash routing. #jobs, #insights/github, … ; old hashes (#apps, #overview, #log, #github) still work.
+  exports: SECTIONS:15 MORE:17 FORM_VIEWS:23 parse:26 go:31 render:55 load:63
 - `ui/js/shell.js` (95) The app shell (canvas board Main.dc.html): segmented sections, live run status with Run now / Stop, Ask Claude, More menu.
   exports: PHASE:11 renderNav:15 renderMenu:23 toggleMenu:35 renderStatus:60 openAskClaude:87
-- `ui/js/state.js` (42) App state: the data loaded from the server plus what the user is looking at.
+- `ui/js/state.js` (44) App state: the data loaded from the server plus what the user is looking at.
   exports: S:4 app:26 isBusy:28 loadState:30 loadData:36
 - `ui/js/theme.js` (21) Theme: follows the system (prefers-color-scheme) until the user flips the switch; "Match system" clears the choice.
   exports: getChoice:6 isDark:7 applyTheme:9 setChoice:14 watchSystem:18
@@ -159,8 +159,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: tag:4 tags:5
 
 ## UI: screens
-- `ui/js/screens/activity/index.js` (52) Activity screen (canvas boards Activity, Activity-Stopped): every run newest first; open one to see each job and why.
-  exports: renderActivity:20 ACT_ACTIONS:32
+- `ui/js/screens/activity/index.js` (54) Activity screen (canvas boards Activity, Activity-Stopped): every run newest first; open one to see each job and why.
+  exports: renderActivity:21 ACT_ACTIONS:33
 - `ui/js/screens/activity/model.js` (119) Activity data → words: each run's date, result, counts and summary, and what Claude did with each job (and why). No HTML here.
   exports: time:7 short:8 runDay:10 when:17 duration:18 outcome:37 jobRow:63 result:66 hasProblem:75 counts:78 stopReason:86 stopNotes:90 summary:97 note:111
 - `ui/js/screens/activity/view.js` (86) Activity markup (canvas boards Activity, Activity-Stopped): the run list, and one open run's jobs.
@@ -169,8 +169,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: ICON:8 allChecks:94
 - `ui/js/screens/doctor/history.js` (64) Doctor: "Ask the doctor" and the fix history (data/doctor/<id>.json): what broke, what Claude changed, what was backed up, Undo.
   exports: askHtml:8 historyHtml:32
-- `ui/js/screens/doctor/index.js` (90) Doctor screen (canvas board Doctor): health checks with one fix each, Ask the doctor, and the fix history with Undo.
-  exports: renderDoctor:21 DOC_ACTIONS:55
+- `ui/js/screens/doctor/index.js` (93) Doctor screen (canvas board Doctor): health checks with one fix each, Ask the doctor, and the fix history with Undo.
+  exports: renderDoctor:22 DOC_ACTIONS:57
 - `ui/js/screens/guidance/act.js` (152) Guidance: running a Claude call with Cancel, and the actions Claude's answers end in. Every action that changes your data
   exports: refreshList:13 loadConv:16 withClaude:23 cancel:36 startInterview:105 runAction:126 rename:136 remove:142 copyDraft:147
 - `ui/js/screens/guidance/chat.js` (142) Guidance, center (canvas board Guidance): the conversation. The weekly check-in renders as a card at the top of the pinned
