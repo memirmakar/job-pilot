@@ -17,3 +17,11 @@ Tips:
 - One task per chat. If a task touches more than two screens or areas, split it into two chats.
 - Start a new chat instead of continuing a very long one; the handover in docs/STATUS.md carries what matters.
 - For a bigger feature, ask first: "Plan this and tell me the steps before changing anything."
+
+Bigger features (more than one chat):
+
+    Plan this as docs/plans/<name>.md using the template in docs/plans/README.md. Don't change code yet.
+
+Then start each following chat with only:
+
+    Continue docs/plans/<name>.md

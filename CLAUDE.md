@@ -4,17 +4,19 @@ Local Windows app: searches LinkedIn daily (Playwright + Edge), has the user's C
 where allowed, and explains every decision in a local web UI (`node server.mjs`, plain ES modules in `ui/`, no build). README.md is the user's view.
 
 ## Start every task
-1. Read `docs/STATUS.md` (handover: state, known issues, open decisions).
+1. Read `docs/STATUS.md` (handover: state, known issues, active plans). If the prompt names a plan (`docs/plans/<plan>.md`), read it and follow `docs/plans/README.md`.
 2. Find the code in `docs/CODEMAP.md` (every file's purpose, exports and routes with line numbers). Open only what the task needs.
-3. Read a topic doc only when the task touches it: `docs/DATA.md` (data files), `docs/UI.md` (UI rules, tokens, screens), `docs/DECISIONS.md` (rules the app follows; check before changing behavior).
+3. Read a topic doc only when the task touches it: `docs/DATA.md` (data files), `docs/DECISIONS.md` (rules the app follows; check before changing behavior).
+   UI rules, tokens and screens are in `ui/CLAUDE.md`, which loads by itself when you work under `ui/`.
+4. A feature that needs more than one chat gets a plan file in `docs/plans/` (template in its README) before work starts.
 
 ## Keep context small
 - Never `cat` whole files or several files at once. Locate with Grep (or `grep -n`), then Read with `offset`/`limit` around the lines you need. Don't re-read what is already in context.
-- Never read `browser_profile/`, `node_modules/`, `design/tokens.json`, `ui/styles/tokens.css` or `components.css` (token and class names are in docs/UI.md).
+- Never read `browser_profile/`, `node_modules/`, `design/tokens.json`, `ui/styles/tokens.css` or `components.css` (token and class names are in ui/CLAUDE.md).
 - Data: print keys or one record with a `node -e` one-liner; never dump `data/` files or folders. Logs (`run.log`, `applications.csv`, `data/runs/*.log`): tail only.
 - Cap command output (`| head`, `| tail -n 40`). Run checks that print a summary, not everything.
 - UI checks: page text, `read_page` or a small JS check first; at most 3 screenshots per task, scale 0.5, at the end.
-- Don't read the design canvas unless the task is new UI design; then one board at a time (see docs/UI.md).
+- Don't read the design canvas unless the task is new UI design; then one board at a time (see ui/CLAUDE.md).
 - One task per chat. If it grows past two areas, finish the first, update STATUS, and say what the next chat should do.
 
 ## Safety
@@ -32,5 +34,6 @@ where allowed, and explains every decision in a local web UI (`node server.mjs`,
 
 ## Finish every task
 1. `node tools/codemap.mjs` if you added, removed or renamed files or exports.
-2. Update `docs/STATUS.md` (replace stale lines; known issues and next steps), add one line to `CHANGELOG.md`, and update DATA/UI/DECISIONS if you changed what they describe.
+2. Update `docs/STATUS.md` (replace stale lines; known issues and next steps), add one line to `CHANGELOG.md`, and update `docs/DATA.md`, `ui/CLAUDE.md`
+   or `docs/DECISIONS.md` if you changed what they describe. Working on a plan: update its stages, Handover and Next prompt (docs/plans/README.md).
 3. Commit with a message saying what changed for the user.

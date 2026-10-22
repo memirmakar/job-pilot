@@ -30,5 +30,5 @@ Rules the app follows and why. Change one only when the user asks; then update t
 ## Engineering
 14. **No build, no framework, no new npm packages without asking.** Users install with `Install.cmd` only. Node built-ins only (zip and docx use zlib).
 15. **Small modules.** Files stay under ~300 lines; new behavior goes in a new module, not in `pipeline.mjs`, `llm.mjs` or `linkedin.mjs`.
-16. **The UI follows the Job Pilot design system** (Catppuccin Mocha/Latte, Mauve the only accent, Apple-like restraint). Rules in `docs/UI.md`.
+16. **The UI follows the Job Pilot design system** (Catppuccin Mocha/Latte, Mauve the only accent, Apple-like restraint). Rules in `ui/CLAUDE.md`.
 17. **The LinkedIn browser is Edge** with its own persistent profile (`browser_profile/`); Playwright's bundled Chromium is only a fallback and isn't installed.

@@ -9,10 +9,12 @@ Read this at the start of every task. Update it at the end: keep it short, repla
 
 - Loading states are in (router `load()` shows the skeleton until the first load; Activity and Doctor load their own data with the same skeleton and error). Guidance, Resumes and Settings' lazy lists still show short in-place "Loading…" text.
 
+## Active plans (multi-chat features; start a chat with "Continue docs/plans/<plan>.md")
+- `docs/plans/edge-launch.md`: clear errors when the browser can't start. Next: stage 1, find the real errors.
+
 ## Known issues
 - **Daily run isn't installed in Windows**: settings say on at 16:00, but no scheduled task exists ("Not scheduled" in the top bar). The user fixes it from Settings → Schedule.
-- **Test runs fail when Edge doesn't start**: `linkedin.mjs` `launch()` falls back to Playwright's Chromium, which isn't installed, and that error hides Edge's real one.
-  Fix idea: report the Edge error first, and say "close Job Pilot's Edge windows" when the profile is locked.
+- **Test runs fail when Edge doesn't start** and the error hides why: being fixed in the plan `docs/plans/edge-launch.md`.
 - **Weekly check-in prints raw ISO dates** ("2026-10-04") instead of "Oct 4" (`coach.mjs` / `weekFacts`).
 - `package.json` still has a `kariyer` script for a job site the app no longer supports.
 - Data to check with the user: the sent Bulutistan resume says military service "deferred (2 years)" while the profile says exempt.

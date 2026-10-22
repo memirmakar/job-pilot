@@ -3,6 +3,7 @@
 Newest first, one line per change a user would notice or a later session needs to know. Details live in the commit and in docs/.
 
 ## 2026-10-23
+- UI rules moved to ui/CLAUDE.md (loads only when working on the UI); docs/plans/ for multi-chat features with a handover per plan; first plan: edge-launch.
 - Loading states: every screen shows a skeleton of its layout (Mocha and Latte) instead of a blank page, a calm "still loading" line after 4 s, and a failed load says what went wrong with a Try again button (`components/loading.js`).
 
 ## 2026-10-22

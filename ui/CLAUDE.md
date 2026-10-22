@@ -1,5 +1,7 @@
 # UI
 
+Loaded automatically when a chat works with files under `ui/`. Rules, token names, components and the screen → files → boards map for the UI.
+
 Plain ES modules served from `ui/`, no build, no framework. Screens render into `#view`, re-render through `app.render()`, and all server calls go through `ui/js/api.js`.
 Click handlers are `data-action` attributes handled in `ui/js/actions.js`. Find a function's file and line in `docs/CODEMAP.md`.
 
