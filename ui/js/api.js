@@ -67,6 +67,19 @@ export const checkReupload = (b) => call("/api/resumes/check", b);              
 export const useReupload = (b) => call("/api/resumes/use", b);                       // { token, remove[], confirm[] }
 export const saveAnswers = (answers) => call("/api/answers", { answers });           // { key: { tr, en } }
 export const docxUrl = (id) => "/api/resumes/docx?id=" + encodeURIComponent(id);
+export const instructResume = (id, instruction) => call("/api/resumes/instruct", { id, instruction }); // staged like checkReupload; then useReupload
+export const saveResumeRules = (b) => call("/api/resumes/rules", b);                 // { rules?[{id text}], settings?{ namePattern photoTr photoEn } }
+export const addResumeRule = (text) => call("/api/resumes/rule", { text });
+export const savePhoto = (data, source) => call("/api/resumes/photo", { data, source }); // JPEG base64 from the crop step
+export const removePhoto = () => call("/api/resumes/photo/remove", {});
+export const photosFrom = (file) => call("/api/resumes/photo/from", { file });       // { images[{ w h url }] } found in an original PDF
+export const photoUrl = () => "/api/resumes/photo?t=" + Date.now();
+export const setProject = (repo, patch) => call("/api/resumes/project", { repo, ...patch }); // { state? use|never|unreviewed, resumeName?, resumeLine? }
+export const suggestProjects = () => call("/api/resumes/projects/suggest", {});
+export const renameResume = (id, b) => call("/api/resumes/rename", { id, ...b });   // { name?, file? }
+export const deleteResume = (id, rebuild = true) => call("/api/resumes/delete", { id, rebuild });
+export const undoDelete = () => call("/api/resumes/undo", {});
+export const renameAllResumes = () => call("/api/resumes/rename-all", {});
 export const saveProfile = (patch) => call("/api/profile", patch);
 export const saveSettings = (patch) => call("/api/settings", patch);
 export const setTodo = (id, done) => call("/api/todo", { id, done });        // -> { state, flagged }: done flags the jobs it lifts for re-scoring

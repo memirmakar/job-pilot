@@ -9,6 +9,9 @@ To look at real data, print keys or one record with a `node -e` one-liner; never
 - Tailoring: `tailored{used score baseScore file path baseFile basePath pass uploaded resume{changes not_added github_added}}`;
   `tailored.versions[{v by(claude|you) file path score at note changes resume confirmed}]` (oldest first, last = current; missing = v1 from `tailored{}`);
   `tailored.sent{v at company}` (missing on old applied records = v1 when `uploaded`). A re-upload moves `tailored.file/path/score` to the new version; the sent one never changes.
+  Resume rules work adds (all optional): `tailored.displayName`; `tailored.sent.fileName` (the name it was sent under; derived from the sent version's file);
+  `tailored.deleted{at}` (v1 deleted from the Resumes menu: hidden, job falls back to the original); versions gain `instruction` ("Ask Claude to change") and
+  `resume.photo`; each change gains `rule` (the standing rule it applied). `tailoredBefore` exists only while `retailor.mjs` runs.
 - Form: `steps[{fields[{label value source confidence reasoning}]}]` (source: prefilled | claude | approved), `warnings`, `usage{costUsd …}`, `archived{at reason}`.
 - After Applied: `statusHistory[{status at source note date}]` (status: viewed | interview | offer | rejected | applied (back to applied) | listing_closed;
   source: linkedin | you; `date` = interview "YYYY-MM-DDTHH:MM"). `status` stays `applied`; the app shows the latest entry.
@@ -32,10 +35,14 @@ To look at real data, print keys or one record with a `node -e` one-liner; never
     `workplace` other than all three adds LinkedIn's `f_WT` filter. Resolved by `profiles.mjs`.
   - `answers{salary military license notice travel relocation english: {tr en}}` (moved out of `facts` once by `config.mjs` `loadProfile()`; old text in `factsBeforeAnswers`).
     `config.profile` (what every prompt reads) = standard answers + remaining facts.
+  `resumeRules[{id text at}]` (standing rules for every resume) and `resumeSettings{namePattern photoTr photoEn(null = ask) photo{at source} noRebuild[field]}`
+  (`resume_prefs.mjs`; default pattern `{First}_{Last}_CV_{LANG}`). The photo itself: `data/photo/photo.jpg` (600×800 JPEG from the crop step).
 - `data/onboarding.json`: onboarding progress (step, reached, answers, the plan) so setup resumes where it stopped.
 
 ## Resumes
 - `resumes/` (project root, git-ignored): uploaded originals. `data/resumes.json`: per original `name language fields defaultFor uploadedAt read{resume roles skills languages new_skills} history[{v at path note}]`.
+  `data/resumes.json` also gets `deleted{at}`, `currentBy currentNote` (a version Claude made from your instruction); history entries keep `read`.
+  Deleted resumes: `data/trash.json` `[{at id kind label undo{…} undoneAt}]` (last 50) with files in `data/trash/<ts>/`; ready-resume `meta.json` gains `displayName`.
 - Old files of originals: `data/resumes_history/<file>/v<N>-<file>`; same-name uploads archive first. Staged uploads wait in `data/staging/<token>/`.
 - `data/library/<field>/`: ready resumes (`meta.json` + `versions[]`, older PDFs in `versions/`, your uploads in `v<N>/`).
 - `data/tailored/<job>/`: tailored PDFs (`pass1`, `pass2`, re-uploads in `v<N>/`). Resumes are structured JSON rendered to PDF by `resume_pdf.mjs`.
@@ -59,6 +66,8 @@ To look at real data, print keys or one record with a `node -e` one-liner; never
 
 ## GitHub, conversations, doctor, backups
 - `data/github/repos.json` (`user fetchedAt repos`), `data/github/review.json` (`repo → review` with `relevance field fixes[] pin(pin|maybe|dont)`; a refresh re-reviews repos lacking `relevance`).
+  `data/github/projects.json`: `{repo: {state(use|never) resumeName description suggested{state name description why at} at}}`; a repo without a state is
+  "Not reviewed" and never reaches a prompt (`github.mjs` `githubBrief` passes only approved repos, by resume name; `{ all: true }` for everything).
 - `data/conversations/` (`coach_store.mjs`): `<site>-<id>.json` per job (shared by the Jobs Ask panel and Guidance), `g-<id>.json` general, `weekly.json` check-ins; deleted ones move to `deleted/`.
   Format `{v: 2, cid kind(job|general|weekly) title titleByYou site id company createdAt updatedAt messages[{role(user|claude) text at kind? actions[]? stats? n?}]
   summary{text upto} context{goals resumes github jobs market off[]} interview{job lang plan[{q about}] i startedAt answers[]}|null interviews[] costUsd usage{calls input output promptChars} lastCall}`.

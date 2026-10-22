@@ -7,6 +7,7 @@ import { DIR, DATA, loadProfile, saveProfile } from "./config.mjs";
 import { LIB_DIR, readyVersions, slug } from "./library.mjs";
 import { archiveOriginal, setOriginalMeta, loadMeta, saveMeta, isResumeFile, tailoredVersions, sentVersion, guessLang } from "./resumes.mjs";
 import { docxText } from "./docx.mjs";
+import { neutralName, enforcePhoto } from "./resume_prefs.mjs";
 
 const STAGE = path.join(DATA, "staging");
 const rel = (p) => path.relative(DIR, p).replace(/\\/g, "/");
@@ -61,7 +62,7 @@ export function addOriginal(token, { name, language, fields = [], defaultFor = [
 
 // ---------- edited tailored / ready resumes ----------
 const recFile = (k) => path.join(DATA, "applications", `${path.basename(k)}.json`);
-function target(kind, key) {
+export function reuploadTarget(kind, key) {
   if (kind === "t") {
     const r = JSON.parse(fs.readFileSync(recFile(key), "utf8"));
     if (!r.tailored) throw new Error("This job has no tailored resume.");
@@ -72,12 +73,13 @@ function target(kind, key) {
 }
 
 export async function checkStaged(token, id) {
-  const p = loadPending(token), [kind, key] = [id[0], id.slice(2)], t = target(kind, key);
+  const p = loadPending(token), [kind, key] = [id[0], id.slice(2)], t = reuploadTarget(kind, key);
   const { checkEdited, removeLines } = await import("./resume_read.mjs");
   const { renderResumePdf } = await import("./resume_pdf.mjs");
   const current = t.versions.at(-1).resume || t.base;
   const res = await checkEdited({ filePath: path.join(DIR, p.readPath), current });
-  const fileName = path.basename(t.versions.at(-1).file || t.versions.at(-1).path);
+  enforcePhoto(res.resume); // a re-upload never drops the photo when the rule says include
+  const fileName = neutralName(res.resume.language);
   const preview = await renderResumePdf(res.resume, path.join(STAGE, p.token, "preview", fileName));
   let from = t.versions.at(-1).score ?? null, score = null;
   if (kind === "t") {
@@ -96,19 +98,28 @@ export async function checkStaged(token, id) {
 
 // remove: unsupported lines to drop; confirm: lines the user says are true (added to profile facts so later checks know them)
 export async function useStaged(token, { remove = [], confirm = [] }) {
-  const p = loadPending(token), [kind, key] = [p.id[0], p.id.slice(2)], t = target(kind, key);
+  const p = loadPending(token), [kind, key] = [p.id[0], p.id.slice(2)], t = kind === "o" ? null : reuploadTarget(kind, key);
   const left = (p.unsupported || []).filter((u) => !remove.includes(u.text) && !confirm.includes(u.text));
   if (left.length) throw new Error("Remove or confirm every line Claude couldn't find in your originals first.");
   const { removeLines } = await import("./resume_read.mjs");
   const { renderResumePdf } = await import("./resume_pdf.mjs");
-  const resume = removeLines(p.resume, remove);
-  const v = t.versions.at(-1).v + 1, out = await renderResumePdf(resume, path.join(t.dir, `v${v}`, p.fileName));
+  const resume = enforcePhoto(removeLines(p.resume, remove));
   const changes = p.changes.filter((c) => !remove.includes(c.text));
-  const entry = { v, by: "you", file: p.fileName, path: rel(out), score: p.score, at: new Date().toISOString(), note: "Edited version you uploaded", changes, resume, confirmed: confirm };
   if (confirm.length) {
     const prof = loadProfile();
     saveProfile({ ...prof, facts: [prof.facts, ...confirm.map((l) => `Confirmed by me: ${l}`)].filter(Boolean).join("\n") });
   }
+  if (kind === "o") {
+    const out = await renderResumePdf(resume, path.join(STAGE, p.token, "final", p.fileName));
+    const { commitOriginal } = await import("./resume_instruct.mjs");
+    const entry = await commitOriginal(p, resume, out);
+    discard(token);
+    return entry;
+  }
+  // A new version gets its own folder and the neutral file name; an instruction's version is Claude's, a re-upload's is yours
+  const v = t.versions.at(-1).v + 1, out = await renderResumePdf(resume, path.join(t.dir, `v${v}`, p.fileName));
+  const entry = { v, by: p.instruction ? "claude" : "you", file: p.fileName, path: rel(out), score: p.score, at: new Date().toISOString(),
+    note: p.instruction ? `Changed by Claude: "${p.instruction}"` : "Edited version you uploaded", changes, resume, confirmed: confirm, ...(p.instruction ? { instruction: p.instruction } : {}) };
   if (kind === "t") {
     const r = t.r, sent = sentVersion(r);
     // From now on this version is the one used (and sent); a version already sent stays as it was

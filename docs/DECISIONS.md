@@ -14,8 +14,12 @@ Rules the app follows and why. Change one only when the user asks; then update t
 
 ## What never changes or disappears
 7. **Sent versions are immutable.** A re-upload or edit creates a new version; the sent file stays byte-for-byte, and the job shows the score that was sent.
-8. **Nothing is deleted.** Closed listings are archived; replaced resumes move to `data/resumes_history/`; Delete my data writes a backup first; the doctor backs up before fixing and can undo.
+8. **Nothing is deleted.** Closed listings are archived; replaced or deleted originals move to `data/resumes_history/`, other deleted resumes to `data/trash/` (Undo puts back the last one); Delete my data writes a backup first; the doctor backs up before fixing and can undo.
 9. **Old data stays readable.** Add optional fields; never rename or require migration of existing records.
+10b. **(2026-10-22) Files employers see have neutral names**: only the name and language (`resumeSettings.namePattern`), never the job, company, field, "tailored", a pass or a version.
+   Internal folders stay unique per job/version. Sent files keep the name they were sent under (`tailored.sent.fileName`). *Why: the file name shouldn't reveal tailoring.*
+10c. **(2026-10-22) Only approved GitHub projects reach prompts**, under the resume name the user set; "Not reviewed" repos never go on a resume. Standing resume rules and the
+   photo rule apply to tailoring, ready resumes, re-uploads and instructions. *Why: the user decides what employers see.*
 10. **"No reply" is computed, never stored** (from `noReplyDays`), so changing the setting re-labels history correctly.
 
 ## Money and models

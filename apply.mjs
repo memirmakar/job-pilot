@@ -48,6 +48,10 @@ try {
     const { groupTodo } = await import("./todo_group.mjs");
     const r = await groupTodo();
     console.log(r.added ? `Merged ${r.added} new step(s) into ${r.groups} to-do item(s).` : "No new to-do steps to merge.");
+  } else if (cmd === "retailor") {
+    const { retailor } = await import("./retailor.mjs");
+    const done = await retailor({ ids: val("--ids")?.split(",").filter(Boolean) || null, limit: Number(val("--limit")) || Infinity });
+    console.log(`Re-tailored ${done.length} resume(s).`);
   } else if (cmd === "rescore") {
     const { rescoreFlagged } = await import("./rescore.mjs");
     const { loadResumes } = await import("./llm.mjs");

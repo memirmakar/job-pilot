@@ -7,10 +7,10 @@ import config, { loadConfig } from "./config.mjs";
 import { libraryResume, loadResumes } from "./llm.mjs";
 import { renderResumePdf } from "./resume_pdf.mjs";
 import { computeStats, loadRecords, loadAudit } from "./market.mjs";
+import { neutralName, enforcePhoto, loadSettings as resumeSettings } from "./resume_prefs.mjs";
 
 export const LIB_DIR = path.join(DATA, "library");
 export const slug = (s) => String(s).toLowerCase().normalize("NFKD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
-const ascii = (s) => String(s || "").normalize("NFKD").replace(/\p{M}/gu, "").replace(/ı/g, "i").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "");
 // Versions of a ready resume, oldest first (the last is current); older entries have only v1
 export const readyVersions = (e) => e.versions?.length ? e.versions
   : [{ v: 1, by: "claude", file: e.file, path: e.path, at: e.generatedAt, note: `Written for ${e.field}` }];
@@ -29,7 +29,9 @@ export const libraryFiles = () => libraryEntries().map((e) => ({ file: e.file, p
 // Why the library needs rebuilding (empty string = up to date)
 export function libraryDue() {
   const entries = libraryEntries();
-  const fields = (loadConfig().targets || []).map((t) => t.field);
+  // fields whose ready resume you deleted with "rebuild" off are skipped (resume_prefs noRebuild)
+  const off = resumeSettings().noRebuild || [];
+  const fields = (loadConfig().targets || []).map((t) => t.field).filter((f) => !off.includes(f));
   if (!fields.length) return "";
   if (!entries.length) return "no library yet";
   const missing = fields.filter((f) => !entries.some((e) => e.field === f));
@@ -38,6 +40,7 @@ export function libraryDue() {
   if (Date.now() - oldest > (loadConfig().library?.everyDays ?? 7) * 864e5) return "weekly refresh";
   const resumesChanged = Math.max(0, ...fs.readdirSync(path.join(DIR, "resumes")).map((f) => mtime(path.join(DIR, "resumes", f)))) > oldest;
   if (resumesChanged) return "your uploaded resumes changed";
+  if (Object.values(loadMeta()).some((m) => Date.parse(m.deleted?.at || 0) > oldest)) return "you deleted an original";
   if (mtime(path.join(DATA, "github", "review.json")) > oldest) return "your GitHub changed";
   return "";
 }
@@ -46,7 +49,8 @@ export async function buildLibrary(githubBrief = "", log = console.log) {
   const stats = computeStats(loadRecords(), loadAudit());
   loadResumes(); // throws early if there are no resumes
   const built = [];
-  for (const field of config.targets || []) {
+  const off = resumeSettings().noRebuild || [];
+  for (const field of (config.targets || []).filter((t) => !off.includes(t.field))) {
     log(`  Library: writing the ${field.field} resume...`);
     const seg = stats.segments.find((s) => s.segment === field.field);
     const requirements = seg ? [
@@ -59,7 +63,8 @@ export async function buildLibrary(githubBrief = "", log = console.log) {
     const hint = def ? `\nThe candidate set ${def} as the default resume for this field: start from it.` : "";
     const { resume, usage } = await libraryResume({ field, requirements: requirements + hint, github: githubBrief });
     const dir = path.join(LIB_DIR, slug(field.field));
-    const file = `${ascii(resume.name)}_${ascii(field.field)}_CV.pdf`;
+    enforcePhoto(resume);
+    const file = neutralName(resume.language); // the name employers see: never the field
     // keep the previous version for comparison, and its PDF in versions/ so the history still opens it
     const prevMeta = path.join(dir, "meta.json");
     const prev = fs.existsSync(prevMeta) ? JSON.parse(fs.readFileSync(prevMeta, "utf8")) : null;
@@ -76,7 +81,7 @@ export async function buildLibrary(githubBrief = "", log = console.log) {
     const out = await renderResumePdf(resume, path.join(dir, file));
     const meta = {
       field: field.field, file, path: path.relative(DIR, out).replace(/\\/g, "/"), generatedAt: new Date().toISOString(),
-      basedOnJobs: seg?.jobs || 0, resume, usage: { costUsd: usage?.costUsd || 0 },
+      basedOnJobs: seg?.jobs || 0, resume, usage: { costUsd: usage?.costUsd || 0 }, ...(prev?.displayName ? { displayName: prev.displayName } : {}),
     };
     if (versions.length) meta.versions = [...versions, { v: versions.at(-1).v + 1, by: "claude", file, path: meta.path, at: meta.generatedAt, note: `Rewritten for ${field.field}` }];
     fs.writeFileSync(path.join(dir, "meta.json"), JSON.stringify(meta, null, 2));

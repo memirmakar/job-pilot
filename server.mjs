@@ -131,11 +131,13 @@ const routes = {
   "GET /api/runs": (req, res) => json(res, fs.readdirSync(RUNS_DIR).filter((f) => /^\d{4}-.*\.json$/.test(f)).sort().reverse().slice(0, 30).map((f) => {
     const r = readJson(path.join(RUNS_DIR, f)); if (r) delete r.events; return r;
   }).filter(Boolean)),
-  "GET /pdf": (req, res, url) => {
+  "GET /pdf": async (req, res, url) => {
     const file = path.resolve(DIR, url.searchParams.get("p") || "");
     const allowed = ["resumes", ...["tailored", "library", "resumes_history", "staging"].map((d) => path.join("data", d))].map((d) => path.join(DIR, d) + path.sep);
     if (!file.toLowerCase().endsWith(".pdf") || !allowed.some((a) => file.startsWith(a)) || !fs.existsSync(file)) return send(res, 404, "text/plain", "Not found");
-    res.writeHead(200, { "Content-Type": "application/pdf", "Content-Disposition": `${url.searchParams.has("dl") ? "attachment" : "inline"}; filename="${path.basename(file)}"` });
+    // Downloads get the neutral name employers see (Resumes > Your resume rules), whatever the file is called on disk
+    const dl = url.searchParams.has("dl"), name = dl ? (await fresh("resumes.mjs")).downloadName(path.relative(DIR, file)) : path.basename(file);
+    res.writeHead(200, { "Content-Type": "application/pdf", "Content-Disposition": `${dl ? "attachment" : "inline"}; filename="${name}"` });
     res.end(fs.readFileSync(file));
   },
 
@@ -172,7 +174,7 @@ const routes = {
   },
   "POST /api/task": async (req, res) => {
     const { name } = await body(req);
-    const map = { library: ["library"], review: ["review"], github: ["github", "--refresh"], selftest: ["selftest"], todo: ["todo"] };
+    const map = { library: ["library"], review: ["review"], github: ["github", "--refresh"], selftest: ["selftest"], todo: ["todo"], retailor: ["retailor"] };
     if (!map[name]) return json(res, { error: "unknown task" }, 400);
     try { json(res, startTask(name, map[name])); } catch (e) { json(res, { error: e.message }, 409); }
   },

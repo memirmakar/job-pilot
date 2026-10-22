@@ -3,11 +3,14 @@ import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 import config from "./config.mjs";
+import { photoFor, PHOTO_FILE } from "./resume_prefs.mjs";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-// Single column, real text, standard headings: what ATS parsers read best.
+// Single column, real text, standard headings: what ATS parsers read best. The photo (Resumes > Your resume rules) sits at the
+// top right of the header when the photo rule or the resume says so, as Turkish CVs usually have it.
 export function resumeHtml(r) {
+  const photo = photoFor(r) ? `<img class="photo" alt="" src="data:image/jpeg;base64,${fs.readFileSync(PHOTO_FILE).toString("base64")}">` : "";
   const section = (s) => `
     <h2>${esc(s.title)}</h2>
     ${s.items.map((it) => `
@@ -29,10 +32,14 @@ export function resumeHtml(r) {
     ul { margin: 2px 0 0; padding-left: 16px; }
     li { margin: 1px 0; }
     .skills div { margin: 1px 0; }
+    .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .photo { width: 27mm; height: 36mm; object-fit: cover; border-radius: 2px; flex: none; }
   </style></head><body>
+    <div class="head"><div>
     <h1>${esc(r.name)}</h1>
     <div class="headline">${esc(r.headline)}</div>
     <div class="contact">${r.contact.map(esc).join(" · ")}</div>
+    </div>${photo}</div>
     <h2>${r.language === "tr" ? "Özet" : "Summary"}</h2>
     <p class="summary">${esc(r.summary)}</p>
     ${r.sections.map(section).join("")}

@@ -5,8 +5,9 @@ import path from "node:path";
 import { DIR, DATA } from "./config.mjs";
 import { ask, PROFILE, ResumeSchema } from "./llm.mjs";
 import { githubBrief } from "./github.mjs";
+import { rulesText } from "./resume_prefs.mjs";
 
-const CORE = ["language", "name", "headline", "contact", "summary", "sections", "skills"];
+const CORE = ["language", "name", "headline", "contact", "summary", "sections", "skills", "photo"];
 const Structured = { type: "object", additionalProperties: false, required: CORE, properties: Object.fromEntries(CORE.map((k) => [k, ResumeSchema.properties[k]])) };
 const strs = { type: "array", items: { type: "string" } };
 
@@ -54,11 +55,12 @@ const CheckSchema = {
   properties: {
     resume: Structured,
     changes: { type: "array", description: "Every difference from the current version, in reading order", items: { type: "object", additionalProperties: false,
-      required: ["kind", "where", "text", "note"], properties: {
+      required: ["kind", "where", "text", "note", "rule"], properties: {
         kind: { type: "string", enum: ["Added", "Moved", "Reworded", "Removed"] },
         where: { type: "string", description: "Section, e.g. 'Summary' or 'Projects'" },
         text: { type: "string", description: "The new line, or the removed one" },
-        note: { type: "string", description: "Short: where the fact comes from (an original, the profile, GitHub), or 'can't verify'" } } } },
+        note: { type: "string", description: "Short: where the fact comes from (an original, the profile, GitHub), or 'can't verify'" },
+        rule: { type: "string", description: "The candidate's standing rule this change follows, word for word, or empty" } } } },
     unsupported: { type: "array", description: "Lines in the edited file that state a fact (skill, tool, employer, title, date, number, responsibility, project) that no original resume, profile fact or GitHub repo supports", items: { type: "object",
       additionalProperties: false, required: ["text", "where"], properties: { text: { type: "string" }, where: { type: "string" } } } },
   },
@@ -70,9 +72,9 @@ export async function checkEdited({ filePath, current }) {
     `The candidate edited their resume outside the app. Read the edited file: ${filePath}`,
     `The current version it was edited from (structured):\n${JSON.stringify(current)}`,
     `The candidate's original resumes, the only sources of facts besides the profile and GitHub (read them):\n${all.map((r) => `- ${r.file}: ${r.path}`).join("\n")}`,
-    PROFILE(), cachedGithub(),
+    PROFILE(), rulesText(), cachedGithub(),
   ].filter(Boolean).join("\n\n");
-  const system = `You check an edited resume. 1) Copy the edited file into the structured resume exactly as written, without rewording or fixing it.
+  const system = `You check an edited resume. Lines the profile lists as "Confirmed by me" count as supported. Keep "photo" as the photo rule says. 1) Copy the edited file into the structured resume exactly as written, without rewording or fixing it.
 2) List what changed against the current version. 3) List every line whose facts none of the sources support. Rewording a supported fact is fine;
 a new skill, tool, employer, title, date, number, project or responsibility that no source shows is unsupported. Never invent or assume experience.
 Use the Read tool to open the files. Reply only with the structured result.`;
@@ -93,3 +95,6 @@ export function removeLines(resume, lines) {
   r.summary = r.summary.split(/(?<=[.!?])\s+/).filter((sentence) => !hit(sentence)).join(" ");
   return r;
 }
+
+// Shared with resume_instruct.mjs ("Ask Claude to change this resume")
+export { Structured, CheckSchema, sources, cachedGithub };

@@ -85,10 +85,12 @@ function rankJobs(records, question, skip, n = 8) {
   return records.filter((r) => !skip.has(keyOf(r)) && (!r.archived || rank(r) >= 20)).map((r) => [rank(r), r]).sort((a, b) => b[0] - a[0]).slice(0, n).map((x) => x[1]);
 }
 
+// Only the repos approved for resumes (Resumes > GitHub projects), under the names resumes use
 function githubLines(n = 10) {
-  const repos = readJson(path.join(DATA, "github", "repos.json"))?.repos || [], rev = readJson(path.join(DATA, "github", "review.json"), {});
+  const ok = readJson(path.join(DATA, "github", "projects.json"), {});
+  const repos = (readJson(path.join(DATA, "github", "repos.json"))?.repos || []).filter((r) => ok[r.name]?.state === "use"), rev = readJson(path.join(DATA, "github", "review.json"), {});
   return repos.map((r) => ({ r, v: rev[r.name] || {} })).sort((a, b) => (b.v.relevance ?? 0) - (a.v.relevance ?? 0)).slice(0, n)
-    .map(({ r, v }) => `- [[repo:${r.name}|${r.name}]] | ${Object.keys(r.languages || {}).slice(0, 3).join(", ") || "no code"} | relevance ${v.relevance ?? "?"}${v.field ? ` (${v.field})` : ""}` +
+    .map(({ r, v }) => `- [[repo:${r.name}|${ok[r.name].resumeName || r.name}]] (repo ${r.name}) | ${Object.keys(r.languages || {}).slice(0, 3).join(", ") || "no code"} | relevance ${v.relevance ?? "?"}${v.field ? ` (${v.field})` : ""}` +
       `${v.pin ? ` | pin: ${v.pin}` : ""} | ${cut(v.summary || r.description, 160)}${v.fixes?.[0] ? ` | fix: ${cut(v.fixes[0], 120)}` : ""}`);
 }
 
@@ -130,7 +132,7 @@ export function buildContext(conv, question = "") {
     parts.push(["resumes", `Resumes. Originals: ${v.originals.map((o) => `[[resume:${o.id}|${cut(o.name, 40)}]] (${o.language || "?"})`).join(", ")}.\n` +
       `Ready resumes (editable): ${v.ready.map((r) => `[[resume:${r.id}|Ready resume: ${r.field}]]`).join(", ") || "none"}. Tailored resumes: ${v.tailored.length} (one per job, id t:<site>-<id>, editable).`]);
   }
-  if (ctx.github) parts.push(["github", `GitHub repos (ranked by relevance to the target fields):\n${githubLines().join("\n") || "(none fetched)"}`]);
+  if (ctx.github) parts.push(["github", `GitHub projects approved for resumes (ranked by relevance; use their resume names):\n${githubLines().join("\n") || "(none approved yet in Resumes > GitHub projects)"}`]);
   if (ctx.market) parts.push(["market", marketLines()]);
   const open = todo.filter((i) => !i.done).slice(0, 8);
   parts.push(["todo", `To-do (top open steps, ranked by points per hour; ${todo.filter((i) => i.done).length} of ${todo.length} done):\n` +

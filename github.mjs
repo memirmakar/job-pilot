@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import config from "./config.mjs";
 import { assessRepos } from "./llm.mjs";
+import { approvedBrief } from "./github_projects.mjs";
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const CACHE = path.join(DIR, "data", "github");
@@ -71,9 +72,11 @@ export async function loadGithub({ force = false } = {}) {
   return cached.repos.map((r) => ({ ...r, review: reviews[r.name] || null }));
 }
 
-// Compact text for prompts: what the repo is plus the honest review.
-export function githubBrief(repos) {
+// Compact text for prompts. By default only the repos you approved in Resumes > GitHub projects, under their resume names
+// (github_projects.mjs); { all: true } lists every repo with its review (nothing that writes a resume uses that).
+export function githubBrief(repos, { all = false } = {}) {
   if (!repos?.length) return "";
+  if (!all) return approvedBrief(repos);
   return `Candidate's public GitHub repositories, each with an independent critical review:\n` + repos.map((r) => {
     const v = r.review;
     return `- ${r.name} (${r.url}) | ${Object.keys(r.languages).join(", ") || "no code"} | ${r.commits} commits, ${r.fileCount} files | ${r.description}` +

@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import config from "./config.mjs";
+import { rulesText } from "./resume_prefs.mjs";
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -179,9 +180,10 @@ export async function scoreResumes(job, files = loadResumes(), github = "", extr
 // ---------- resume tailoring ----------
 export const ResumeSchema = {
   type: "object", additionalProperties: false,
-  required: ["language", "name", "headline", "contact", "summary", "sections", "skills", "github_added", "changes", "not_added"],
+  required: ["language", "name", "headline", "contact", "summary", "sections", "skills", "github_added", "changes", "not_added", "photo"],
   properties: {
     language: { type: "string", enum: ["en", "tr"] },
+    photo: { type: "boolean", description: "Show the candidate's photo in the header (follow the photo rule)" },
     name: { type: "string" },
     headline: { type: "string", description: "One line under the name, e.g. 'Embedded Software Engineer | STM32 · Embedded C · RTOS'" },
     contact: { type: "array", items: { type: "string" }, description: "Email, phone, city, LinkedIn, GitHub, website: exactly as on the source resume" },
@@ -209,17 +211,18 @@ export const ResumeSchema = {
     },
     skills: { type: "array", items: { type: "object", additionalProperties: false, required: ["group", "items"], properties: { group: { type: "string" }, items: { type: "array", items: { type: "string" } } } } },
     github_added: {
-      type: "array", description: "GitHub repos put on this resume as projects",
+      type: "array", description: "Approved GitHub projects put on this resume (only ones from the approved list)",
       items: {
         type: "object", additionalProperties: false, required: ["repo", "verdict", "note"],
         properties: {
-          repo: { type: "string" },
+          repo: { type: "string", description: "The project's resume name, exactly as given" },
           verdict: { type: "string", enum: ["real_value", "moderate", "ats_padding"] },
           note: { type: "string", description: "Why it was added. For ats_padding, state plainly that it's there for the ATS and isn't really beneficial for actual job hunting." },
         },
       },
     },
-    changes: { type: "array", description: "What was changed versus the source resume and why", items: { type: "object", additionalProperties: false, required: ["what", "why"], properties: { what: { type: "string" }, why: { type: "string" } } } },
+    changes: { type: "array", description: "What was changed versus the source resume and why", items: { type: "object", additionalProperties: false, required: ["what", "why", "rule"],
+      properties: { what: { type: "string" }, why: { type: "string" }, rule: { type: "string", description: "The candidate's standing rule this change follows, word for word, or empty" } } } },
     not_added: { type: "array", items: { type: "string" }, description: "Job requirements deliberately NOT claimed because the source resumes don't support them" },
   },
 };
@@ -240,9 +243,10 @@ Not allowed:
 - Inflating years of experience, seniority or level of involvement.
 - Hidden text or keyword stuffing.
 List every job requirement you couldn't honestly cover under "not_added". Keep it to one or two pages.
-GitHub repos (if provided) are true facts you may use as projects, described exactly as their README/code supports, with the repo URL.
-Prefer repos reviewed as real value. Only add an "ats_padding" repo if it covers a requirement nothing else covers, and record it
-in github_added with a note saying plainly it's there for the ATS and isn't really beneficial for actual job hunting.
+Approved GitHub projects (if provided) are true facts you may use as projects: name each EXACTLY by its resume name (never the repo name),
+describe it only with its line and what its review states, with the repo URL. No other repo may appear. Prefer projects reviewed as real value;
+record every one you use in github_added (repo = its resume name). An "ats_padding" one only if it covers a requirement nothing else covers, with a plain note.
+The candidate's standing rules (if provided) apply to every resume; note the rule in each change it caused.
 Use the Read tool to open the resume files. Reply only with the structured result.`;
 
 // basePath: the base resume when it's not one of the uploads (e.g. a library resume)
@@ -254,6 +258,7 @@ export async function tailorResume({ job, baseFile, basePath = null, ats, feedba
     `Base resume to tailor: ${base.file} (read it at ${base.path})`,
     `Other versions of the candidate's resume (read them too; they're sources of true facts only):\n${others.map((r) => `- ${r.file}: ${r.path}`).join("\n")}`,
     PROFILE(),
+    rulesText(),
     github,
     JOB(job),
     `ATS analysis of the base resume: score ${ats.ats_score}. Missing keywords: ${ats.missing_keywords.join(", ")}. ${ats.reasoning}`,
@@ -277,7 +282,7 @@ export async function libraryResume({ field, requirements, github }) {
     `Field: ${field.field}. Typical searches: ${(field.searchTerms || []).join(", ")}.`,
     `What employers in this field asked for most often in the jobs analyzed so far (sanity-checked; may be empty early on):\n${requirements || "(no data yet)"}`,
     `The candidate's resume versions (read them; they are the only sources of facts):\n${all.map((r) => `- ${r.file}: ${r.path}`).join("\n")}`,
-    PROFILE(), GOALS(), github || "",
+    PROFILE(), GOALS(), rulesText(), github || "",
     `Write the strongest truthful general-purpose resume for applications in this field, in the language most jobs in this field and location use.`,
   ].filter(Boolean).join("\n\n");
   const { data, usage } = await ask({ system, prompt, schema: ResumeSchema, weekly: true, timeoutMs: 10 * 60e3 });

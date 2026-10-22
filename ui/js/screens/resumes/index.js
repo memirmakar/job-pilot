@@ -1,5 +1,5 @@
 // Resumes screen (canvas boards Resumes, Resumes-*): a Mail-style split view. Originals, ready resumes and tailored ones
-// on the left; the selected resume, or Standard answers, on the right. Phones show the list, then the resume.
+// on the left; the selected resume, Standard answers, Your resume rules or GitHub projects on the right. Phones show the list, then the resume.
 import { S, app, loadData } from "../../state.js";
 import * as api from "../../api.js";
 import { $, toast } from "../../util.js";
@@ -9,17 +9,23 @@ import { detailHtml } from "./detail.js";
 import { answersHtml, collectAnswers } from "./answers.js";
 import { openUpload } from "./upload.js";
 import { openReupload } from "./reupload.js";
+import { rulesHtml } from "./rules.js";
+import { projectsHtml } from "./projects.js";
+import { PREF_ACTIONS, bindPrefs } from "./prefs-actions.js";
 import * as M from "./model.js";
+
+// Views on the right that aren't a resume
+const VIEWS = { answers: ["Standard answers", answersHtml], rules: ["Your resume rules", rulesHtml], projects: ["GitHub projects", projectsHtml] };
 
 const phone = () => matchMedia("(max-width: 900px)").matches;
 let last = "";
 
 export function renderResumes() {
   const R = S.res, ids = M.all();
-  if (R.sel !== "answers" && !ids.some((x) => x.id === R.sel)) R.sel = M.order()[0]?.id || ids[0]?.id || null;
-  const sel = R.sel === "answers" ? null : M.byId(R.sel);
+  if (!VIEWS[R.sel] && !ids.some((x) => x.id === R.sel)) R.sel = M.order()[0]?.id || ids[0]?.id || null;
+  const view = VIEWS[R.sel];
   const html = `<div class="rs" data-show="${R.open ? "detail" : "list"}">${listHtml()}
-    <section class="rs-detail" aria-label="${R.sel === "answers" ? "Standard answers" : "Resume"}">${R.sel === "answers" ? answersHtml() : detailHtml(sel)}</section></div>`;
+    <section class="rs-detail" aria-label="${view ? view[0] : "Resume"}">${view ? view[1]() : detailHtml(M.byId(R.sel))}</section></div>`;
   // The 30-second refresh re-renders only when something changed, so the PDF preview doesn't reload under the user
   if (html === last && $("#view .rs")) return;
   const a = document.activeElement, focus = a?.id ? `#${a.id}` : a?.dataset?.id ? `[data-action="${a.dataset.action}"][data-id="${a.dataset.id}"]` : null;
@@ -45,6 +51,7 @@ async function saveMeta(patch) {
 
 // data-action handlers, merged into actions.js
 export const RES_ACTIONS = {
+  ...PREF_ACTIONS,
   "res-select": (el) => select(el.dataset.id),
   "res-filter": (el) => { S.res.filter = el.dataset.v; app.render(); },
   "res-kind": (el) => { S.res.kind = el.dataset.v; app.render(); },
@@ -87,6 +94,7 @@ export const RES_ACTIONS = {
 
 // Search, answer drafts and arrow keys in the list. Bound once from actions.js.
 export function bindResumes() {
+  bindPrefs(select);
   document.addEventListener("input", (e) => {
     if (e.target.id === "res-q") {
       S.res.query = e.target.value; const pos = e.target.selectionStart;

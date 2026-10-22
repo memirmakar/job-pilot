@@ -10,7 +10,7 @@ import * as M from "./model.js";
 export const sentNote = (t) => t.sent ? `Sent to ${t.sent.company || t.job.company} on ${M.day(t.sent.at)}` : "";
 
 export function changesCard(x) {
-  const all = M.changes(x), mine = M.current(x).by === "you";
+  const all = M.changes(x), mine = M.current(x).by === "you" && !M.current(x).instruction;
   const kinds = ["Added", "Moved", "Reworded", "Removed"].map((k) => [k, all.filter((c) => c.kind === k).length]).filter(([, n]) => n);
   const kind = kinds.some(([k]) => k === S.res.kind) ? S.res.kind : "all";
   const shown = all.map((c, i) => ({ ...c, n: i + 1 })).filter((c) => kind === "all" || c.kind === kind);
@@ -25,7 +25,8 @@ export function changesCard(x) {
       <span class="rs-numb" aria-hidden="true">${c.n}</span>
       <div class="rs-change"><div class="rs-change__top">${pill(c.kind, M.KIND_TONE[c.kind])}${c.where ? `<span class="foot ellip">${esc(c.where)}</span>` : ""}</div>
         <p class="t-callout${c.kind === "Removed" ? " rs-strike" : ""}" lang="${esc(x.language)}">${md(c.text)}</p>
-        ${c.why || c.source ? `<p class="foot">${c.why ? `<b>Why:</b> ${md(c.why)}` : ""}${c.source ? ` · <span style="color:var(--success-text)">${esc(c.source)}</span>` : ""}</p>` : ""}</div></li>`).join("")}</ol>`
+        ${c.why || c.source ? `<p class="foot">${c.why ? `<b>Why:</b> ${md(c.why)}` : ""}${c.source ? ` · <span style="color:var(--success-text)">${esc(c.source)}</span>` : ""}</p>` : ""}
+        ${c.rule ? `<p class="foot rs-rule">${icon("check", "ico ico--13")}Your rule: ${esc(c.rule)}</p>` : ""}</div></li>`).join("")}</ol>`
       : `<p class="meta">${x.kind === "original" ? "" : "Claude didn't note any changes for this version."}</p>`}
     ${notAdded.length ? `<div class="rs-notadded"><p class="cap">Not added: your resumes don't show it</p>${tags(notAdded, "", 14)}</div>` : ""}
     <div class="meta rs-card__foot">${icon("check")}${mine ? (M.current(x).confirmed?.length ? `${M.current(x).confirmed.length === 1 ? "The line" : "Lines"} you confirmed as true went into your profile facts; Claude checked every other line against your originals.` : "Claude checked every line against your originals, profile and GitHub.") : `Nothing invented. Claude only used ${esc(base)}, your other originals, your profile and your GitHub.`}</div>

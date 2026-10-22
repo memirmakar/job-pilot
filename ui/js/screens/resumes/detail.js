@@ -1,4 +1,5 @@
 // Resume detail (canvas boards Resumes, Resumes-Original): header with exports, the page preview, and the cards in history.js.
+import { S } from "../../state.js";
 import { esc, icon, pdfUrl } from "../../util.js";
 import { pill } from "../../components/status-pill.js";
 import { callout } from "../../components/card.js";
@@ -57,8 +58,30 @@ function preview(x) {
   </section>`;
 }
 
+// "Ask Claude to change this resume": the result is checked like a re-upload before it becomes a new version
+function askBox(x) {
+  const sent = x.kind === "tailored" && x.sent?.v === M.current(x).v;
+  return `<section class="jp-card rs-card rs-ask" aria-labelledby="ask-title">
+    <h3 id="ask-title" class="t-headline">Ask Claude to change this resume</h3>
+    <form class="rs-ask__form" data-res-instruct>
+      <label class="sr-only" for="res-instr">What should Claude change?</label>
+      <textarea class="jp-input" id="res-instr" rows="2" maxlength="1500" placeholder="e.g. Shorten the summary to 3 lines, or rename my FOC project">${esc(S.res.instrDraft || "")}</textarea>
+      <div class="rs-ask__row"><span class="foot">You see every change and confirm it before it's saved as v${M.current(x).v + 1}.${sent ? " The sent version stays as it was." : ""}</span>
+        <button class="jp-btn jp-btn--tinted jp-btn--sm" type="submit">${icon("chat")}Ask Claude</button></div>
+    </form></section>`;
+}
+
+// The photo rule asks you once for English resumes
+function photoQuestion(x) {
+  const p = S.RES?.prefs;
+  if (!p?.hasPhoto || p.settings.photoEn !== null || x.language !== "en") return "";
+  return callout(`<b>Include your photo on English resumes?</b> Turkish resumes include it. <span class="rs-inline-btns">
+    <button class="jp-btn jp-btn--sm" type="button" data-action="res-photo-en" data-v="1">Include</button>
+    <button class="jp-btn jp-btn--plain jp-btn--sm" type="button" data-action="res-photo-en" data-v="0">Leave out</button></span>`);
+}
+
 function notes(x) {
-  const out = [];
+  const out = [photoQuestion(x)];
   if (x.kind === "tailored" && x.sent) out.push(`<div class="jp-callout rs-sent">${icon("lock", "ico ico--20")}<span><b>${esc(sentNote(x))}.</b> ${
     x.sent.v === M.current(x).v ? "This version stays exactly as sent. Upload a new version to use an edited one from now on." : `v${x.sent.v} stays exactly as sent; v${M.current(x).v} is the one used from now on.`}</span></div>`);
   if (x.kind === "tailored" && x.status === "unused") out.push(callout(`<b>Not used.</b> It scored ${x.score}, not higher than ${esc(x.parentName)} (${x.baseScore}), so Claude sends your original for this job.`));
@@ -71,5 +94,5 @@ export function detailHtml(x) {
   if (!x) return `<div class="rs-empty-detail"><p class="meta" style="color:var(--text)">No resume selected</p><p class="foot">Pick a resume on the left, or upload one.</p></div>`;
   const cards = x.kind === "original" ? [jobsCard(x), defaultsCard(x), versionsCard(x)] : [changesCard(x), versionsCard(x), jobsCard(x)];
   return `${head(x)}
-    <div class="rs-body" id="res-detail-scroll">${preview(x)}<div class="rs-cards">${notes(x)}${cards.join("")}</div></div>`;
+    <div class="rs-body" id="res-detail-scroll">${preview(x)}<div class="rs-cards">${notes(x)}${askBox(x)}${cards.join("")}</div></div>`;
 }

@@ -16,11 +16,10 @@ Read this at the start of every task. Update it at the end: keep it short, repla
 - Data to check with the user: the sent Bulutistan resume says military service "deferred (2 years)" while the profile says exempt.
 
 ## Next up
-- **Resume tailoring fixes** (in progress in another window, uncommitted on 2026-10-22: `resume_*.mjs`, `github_projects.mjs`, `retailor.mjs`, `screens/resumes/`):
-  an "Ask Claude to change this resume" box and standing resume rules; GitHub projects list
-  (use / never use / not reviewed, with professional resume names instead of repo names; gaming and hobby repos excluded); neutral PDF file names that don't reveal tailoring;
-  the user's photo on Turkish resumes (`resume_pdf.mjs` has no photo field today); right-click Rename/Delete in the Resumes list; re-tailor unsent resumes on confirm.
+- Resume rules work is done (see CHANGELOG 2026-10-22). On the real data the user still has to: approve GitHub projects (Resumes > GitHub projects; all 8 are
+  "Not reviewed", so no repo reaches a resume until then), add the photo (Resumes > Your resume rules; "Take it from an original" finds it in every PDF original),
+  then "Rename files to the new pattern" (11 unsent files) and "Re-tailor unsent resumes" (7, about 28 Claude calls) when they choose.
+- The .docx export has no photo yet (`docx.mjs` writes text only).
 
 ## Open decisions (ask the user)
-- Photo: extract from the original PDF or upload separately.
-- Where the GitHub projects list lives: Resumes or Settings.
+- Photo on English resumes: the rule is unset on the real data ("Ask me"), so English resumes ask once.

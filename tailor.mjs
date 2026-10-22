@@ -5,21 +5,24 @@ import config, { DIR } from "./config.mjs";
 import { scoreResumes, tailorResume } from "./llm.mjs";
 import { renderResumePdf } from "./resume_pdf.mjs";
 import * as S from "./store.mjs";
+import { neutralName, enforcePhoto } from "./resume_prefs.mjs";
 
 const { log } = S;
-const ascii = (s) => String(s || "").normalize("NFKD").replace(/\p{M}/gu, "").replace(/ı/g, "i").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
-export async function tailorFor(rec, files, prof, github = "") {
+// sub: a folder under data/tailored/<job>/ for this round (re-tailoring writes v<N>/pass1… so no earlier file is overwritten)
+export async function tailorFor(rec, files, prof, github = "", { sub = "" } = {}) {
   const T = { ...config.tailor, target: prof.target };
   const base = rec.ats.resumes.find((r) => r.file === rec.ats.best_file);
   const baseFile = files.find((f) => f.file === base.file);
-  const dir = path.join(DIR, "data", "tailored", `${rec.site}-${rec.id}`);
+  const dir = path.join(DIR, "data", "tailored", `${rec.site}-${rec.id}`, sub);
   let best = null, previous = null, feedback = null;
   for (let pass = 1; pass <= T.maxPasses; pass++) {
     log(`  Tailoring resume (pass ${pass})...`);
     const { resume, usage } = await tailorResume({ job: rec, baseFile: base.file, basePath: baseFile?.path, ats: base, feedback, previous, github });
     S.addUsage(rec, usage, "tailor");
-    const file = `${ascii(resume.name)}_CV_${ascii(rec.title).slice(0, 40)}.pdf`;
+    enforcePhoto(resume);
+    // The name employers see: only your name and the language (Resumes > Your resume rules), never the job, field or a pass
+    const file = neutralName(resume.language);
     const out = await renderResumePdf(resume, path.join(dir, `pass${pass}`, file));
     const sc = await scoreResumes(rec, [{ file, path: out }]);
     S.addUsage(rec, sc.usage, "tailor");

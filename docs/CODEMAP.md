@@ -68,6 +68,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: zip:63 writeDocx:86 docxText:111
 - `github.mjs` (86) Reads the candidate's public GitHub repos (cached daily) and gets a blunt, cached Claude review of each.
   exports: loadGithub:45 githubBrief:77
+- `github_projects.mjs` (87) Projects for your resume: which GitHub repos may go on resumes (Use on resumes / Never use / Not reviewed), each approved repo
+  exports: loadProjects:11 saveProjects:12 projectsView:17 setProject:28 approvedRepos:41 approvedBrief:46 suggestProjects:68
 - `insights.mjs` (88) Data for the Insights screen (GET /api/insights) that only the server can work out: each job's field (market.mjs segmentOf),
   exports: applicantsOf:14 buildInsights:22
 - `insights_routes.mjs` (26) Insights routes: /api/insights (insights.mjs) and the to-do list's done and added marks (todo.mjs). Mounted by server.mjs.
@@ -81,8 +83,16 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: loadSnapshots:10 cityOf:12 saveSnapshot:15
 - `rescore.mjs` (45) "Re-score on next run": ticking a to-do step done (todo.mjs setDone) flags the jobs it lifts with rec.rescore{ at items }.
   exports: flagged:11 rescoreFlagged:14
+- `resume_instruct.mjs` (90) "Ask Claude to change this resume": Claude applies your instruction to the structured resume, then the result goes through the
+  exports: instructStaged:40 commitOriginal:80
+- `resume_manage.mjs` (187) The Resumes list's menu: Rename (display name, and the file for originals and unsent files), Delete with Undo for the last one,
+  exports: lastDelete:21 deleteResume:25 undoDelete:64 renameResume:111 renameAllToPattern:160
 - `resume_pdf.mjs` (62) Renders a tailored resume (structured JSON from Claude) to an ATS-friendly PDF.
   exports: resumeHtml:12 renderResumePdf:52 closePdfBrowser:61
+- `resume_photo.mjs` (59) Your resume photo (data/photo/photo.jpg): uploaded and cropped in Resumes > Your resume rules, or taken from an original PDF.
+  exports: savePhoto:10 removePhoto:18 photosInPdf:35
+- `resume_prefs.mjs` (97) Your resume rules (profile.json): standing rules for every tailoring, the neutral file name pattern, and the photo.
+  exports: PHOTO_FILE:7 DEFAULT_PATTERN:8 loadRules:11 loadSettings:12 saveResumePrefs:13 addRule:20 hasPhoto:23 photoRule:25 photoFor:27 enforcePhoto:29 neutralName:38 revealing:47 patternProblems:56 rulesText:63 retailorable:74 prefsView:88
 - `resume_read.mjs` (101) Claude reads resume files back into the structured resume (the same shape tailoring writes), through llm.mjs ask():
   exports: readOriginal:40 checkEdited:69 removeLines:88 {Structured, CheckSchema, sources, cachedGithub}:100
 - `resume_routes.mjs` (89) /api/resumes/* and /api/answers: the Resumes screen's routes, merged into server.mjs's route table.
@@ -90,6 +100,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   routes: GET /api/resumes/all:16 POST /api/resumes/read:18 POST /api/resumes/read-existing:20 POST /api/resumes/add:26 POST /api/resumes/discard:29 POST /api/resumes/meta:30 POST /api/resumes/check:39 POST /api/resumes/use:40 GET /api/resumes/docx:41 POST /api/answers:48 POST /api/resumes/instruct:55 POST /api/resumes/rules:57 POST /api/resumes/rule:67 GET /api/resumes/photo:68 POST /api/resumes/photo:73 POST /api/resumes/photo/remove:74 POST /api/resumes/photo/from:75 POST /api/resumes/project:77 POST /api/resumes/projects/suggest:78 POST /api/resumes/rename:83 POST /api/resumes/delete:84 POST /api/resumes/undo:85 POST /api/resumes/rename-all:86
 - `resumes.mjs` (150) Resumes screen data: originals (resumes/ + data/resumes.json), ready resumes (data/library) and tailored ones (job records),
   exports: isResumeFile:21 loadMeta:24 saveMeta:25 guessLang:26 archiveOriginal:30 setOriginalMeta:47 tailoredVersions:60 sentVersion:64 resumesView:116 currentStructured:125 downloadName:139
+- `retailor.mjs` (44) "Re-tailor unsent resumes with your rules" (`node apply.mjs retailor [--limit N] [--ids t:a,t:b]`): tailors each unsent job again with
+  exports: retailor:17
 - `reupload.mjs` (137) Uploads that wait for the user's OK: files are staged in data/staging/<token>/ until "Add original" or "Use this version".
   exports: loadPending:16 stage:20 discard:33 readStagedOriginal:36 addOriginal:45 reuploadTarget:65 checkStaged:75 useStaged:100
 - `server.mjs` (238) The Job Pilot app: a local web server (http://127.0.0.1:4510) for onboarding, settings, running and reviewing everything.
@@ -217,14 +229,26 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: detailHtml:93
 - `ui/js/screens/resumes/history.js` (99) Resume detail cards (canvas board Resumes, right column): what changed against the base, version history,
   exports: sentNote:10 changesCard:12 versionsCard:36 jobsCard:67 defaultsCard:79
-- `ui/js/screens/resumes/index.js` (107) Resumes screen (canvas boards Resumes, Resumes-*): a Mail-style split view. Originals, ready resumes and tailored ones
-  exports: renderResumes:17 RES_ACTIONS:47 bindResumes:89
+- `ui/js/screens/resumes/index.js` (115) Resumes screen (canvas boards Resumes, Resumes-*): a Mail-style split view. Originals, ready resumes and tailored ones
+  exports: renderResumes:23 RES_ACTIONS:53 bindResumes:96
 - `ui/js/screens/resumes/list.js` (73) Resumes list (canvas board Resumes, left column): Upload, search, filter, the grouped rows, Standard answers at the foot.
   exports: listHtml:45
+- `ui/js/screens/resumes/manage.js` (65) Rename and Delete sheets for the Resumes list's menu. Rename changes the name shown here and, for originals and unsent files,
+  exports: openRename:12 openDelete:50
+- `ui/js/screens/resumes/menu.js` (70) The Resumes list's menu: Open, Export as PDF, Export to edit, Rename, Delete. Opens on right-click, from a row's "⋯" button,
+  exports: closeMenu:23 openMenu:33
 - `ui/js/screens/resumes/model.js` (76) Resumes data (S.RES from /api/resumes/all) turned into what the screen shows: groups, rows, words.
   exports: LANG:4 lang:5 RSTATUS:7 FILTERS:8 res:10 all:11 byId:12 current:13 vLabel:14 day:15 when:21 defaultLine:22 groups:27 order:48 counts:50 missingAnswers:54 changeKind:57 KIND_TONE:64 changes:67 notAdded:75
+- `ui/js/screens/resumes/photo.js` (95) Photo crop sheet: a 3:4 frame over the picture (an upload, or an image found in one of your PDF originals). Drag or use the
+  exports: openCrop:59 openFromOriginal:76
+- `ui/js/screens/resumes/prefs-actions.js` (90) Resumes actions for the rules view, the photo, GitHub projects, the row menu and Undo (merged into RES_ACTIONS), plus the
+  exports: PREF_ACTIONS:17 bindPrefs:52
+- `ui/js/screens/resumes/projects.js` (44) GitHub projects for your resume (Resumes > GitHub projects): every repo from your GitHub with your choice: Use on resumes,
+  exports: projectsHtml:33
 - `ui/js/screens/resumes/reupload.js` (124) Re-upload sheet (canvas board Resumes-Reupload): an edited tailored or ready resume comes back. Claude reads it into the
   exports: openChecked:105 openReupload:107 openInstruct:117
+- `ui/js/screens/resumes/rules.js` (77) Your resume rules (Resumes > Your resume rules): standing rules Claude follows on every tailored, ready and re-uploaded resume,
+  exports: rulesHtml:68
 - `ui/js/screens/resumes/upload.js` (104) Upload sheet (canvas board Resumes-Upload): a new original, or a new version of one.
   exports: openUpload:94
 - `ui/js/screens/settings/applying.js` (72) Settings > Applying (boards Settings-Applying, Settings-Review): the four apply modes in plain words with what each would
@@ -250,3 +274,4 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
 
 ## Tools
 - `design/gen-tokens.mjs` (55) Generates ui/styles/tokens.css from design/tokens.json (the design system's tokens).
+- `tools/codemap.mjs` (52) Generates docs/CODEMAP.md: one line per source file with its purpose (the file's first comment line), size,

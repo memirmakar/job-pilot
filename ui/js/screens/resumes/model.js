@@ -66,8 +66,9 @@ export const KIND_TONE = { Added: "success", Moved: "info", Reworded: "accent", 
 // What changed in the current version: Claude's notes for a version Claude wrote, the re-upload check for yours
 export function changes(x) {
   const cur = current(x);
-  if (cur.by === "you") return (cur.changes || []).map((c) => ({ kind: c.kind, where: c.where, text: c.text, why: c.note, source: "" }));
-  const list = (x.resume?.changes || []).map((c) => ({ kind: changeKind(c.what), where: "", text: c.what, why: c.why, source: "" }));
+  // A re-upload's or an instruction's version carries its own checked changes; Claude's tailoring notes are free text
+  if (cur.changes) return cur.changes.map((c) => ({ kind: c.kind, where: c.where, text: c.text, why: c.note, rule: c.rule || "", source: "" }));
+  const list = (x.resume?.changes || []).map((c) => ({ kind: changeKind(c.what), where: "", text: c.what, why: c.why, rule: c.rule || "", source: "" }));
   for (const g of x.resume?.github_added || []) list.push({ kind: "Added", where: "Projects", text: g.repo, why: g.note, source: `From your GitHub: ${g.repo}` });
   return list;
 }
