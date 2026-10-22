@@ -4,5 +4,6 @@ browser_profile/
 node_modules/
 applications.csv
 run.log
-.claude/
+.claude/*
+!.claude/settings.json
 backups/

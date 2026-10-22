@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./browser_profile/**)",
+      "Read(./node_modules/**)",
+      "Read(./design/tokens.json)"
+    ]
+  }
+}

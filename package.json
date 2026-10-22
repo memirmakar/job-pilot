@@ -6,7 +6,8 @@
     "login": "node apply.mjs login",
     "start": "node apply.mjs run all",
     "linkedin": "node apply.mjs run linkedin",
-    "kariyer": "node apply.mjs run kariyer"
+    "kariyer": "node apply.mjs run kariyer",
+    "codemap": "node tools/codemap.mjs"
   },
   "dependencies": {
     "playwright": "^1.55.0"
