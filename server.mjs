@@ -11,6 +11,7 @@ import { insightsRoutes } from "./insights_routes.mjs";
 import { activityRoutes } from "./activity_routes.mjs";
 import { coachRoutes } from "./coach_routes.mjs";
 import { settingsRoutes, scheduleInfo, onboardingProgress } from "./settings_routes.mjs";
+import { remoteInfo, startRemote } from "./remote_access.mjs";
 import { stage } from "./reupload.mjs";
 import { archiveOriginal } from "./resumes.mjs";
 
@@ -109,7 +110,7 @@ const routes = {
     json(res, {
       onboarded: isOnboarded(), settings: loadSettings(), defaults: DEFAULT_SETTINGS, profile: loadProfile(), onboarding: onboardingProgress(), dir: DIR,
       claude: claudeCache, linkedinProfile: fs.existsSync(path.join(DIR, "browser_profile")),
-      schedule: await scheduleInfo(), run: runState(), tasks: taskStatus(), resumes: resumes(),
+      schedule: await scheduleInfo(), remote: await remoteInfo(), run: runState(), tasks: taskStatus(), resumes: resumes(),
     });
   },
   "GET /api/applications": (req, res) => json(res, records()),
@@ -234,4 +235,5 @@ const open = () => spawn("cmd", ["/c", "start", "", `http://127.0.0.1:${PORT}`],
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`Job Pilot running at http://127.0.0.1:${PORT}`);
   if (!process.argv.includes("--no-open")) open();
+  startRemote();
 });

@@ -26,9 +26,9 @@ To look at real data, print keys or one record with a `node -e` one-liner; never
 
 ## Settings and profile
 - `data/settings.json` (defaults in `config.mjs` `DEFAULT_SETTINGS`): `applyMode` (auto | ask_below_target | ask_all | analyze_only; unknown = analyze_only) `noReplyDays`
-  `dailyJobs weeklyJobs dailyApplyLimit scheduleEnabled scheduleTime scheduleDays modelDaily modelWeekly minAtsScore tailorTarget postedWithin tailorMaxPasses
+  `dailyJobs weeklyJobs dailyApplyLimit scheduleEnabled scheduleTime scheduleDays remoteAccess modelDaily modelWeekly minAtsScore tailorTarget postedWithin tailorMaxPasses
   maxRunMinutes rescorePerRun claudePath browserChannel notify{run needsYou replies errors} uploadTailored …`.
-  `weeklyJobs` 0 = off (with `dailyJobs`: "Pause runs after about N jobs a day / M a week", counted across runs). `scheduleDays` all = daily trigger, else weekly on those days.
+  `weeklyJobs` 0 = off (with `dailyJobs`: "Pause runs after about N jobs a day / M a week", counted across runs). `scheduleDays` all = daily trigger, else weekly on those days. `remoteAccess`: phone access on (startup shortcut + keeping the PC awake, `remote_access.mjs`).
 - `data/profile.json`: `name goalsText preferences locations workplace seniority targets[…] titleExclude companyExclude facts githubUser onboardedAt answers{…}`.
   - A target is a search profile: `{field searchTerms why on locations workplace resume tailorTarget minAtsScore dailyApplyLimit titleExclude}`; `on: false` = not searched;
     every other key is an optional override (missing = the global value); `resume` = Resumes id `o:<file>` or `r:<field slug>`; a profile's `titleExclude` adds to the global one;

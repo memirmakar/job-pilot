@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS = {
   dailyApplyLimit: 20,          // Easy Apply submissions per day
   scheduleTime: "10:00",
   scheduleEnabled: true,
+  remoteAccess: false,          // phone access: start at Windows sign-in and keep the PC awake (remote_access.mjs)
   scheduleDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], // days the scheduled task runs (all = daily)
   modelDaily: "sonnet",         // per-job work: picking, scoring, tailoring, answering
   modelWeekly: "opus",          // resume library, market review, GitHub review, doctor

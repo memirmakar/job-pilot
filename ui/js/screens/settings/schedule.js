@@ -48,7 +48,7 @@ export function scheduleHtml() {
         <span class="foot">${noReplyExample(s.noReplyDays)}</span>`)}
       ${row("Daily limit", "Set on each search profile", `<span class="st-inline">${limits()}</span>`)}
       ${row("Job Pilot's page", "This window and its server", `<span class="st-inline"><button class="jp-btn jp-btn--sm" type="button" data-action="quit">Quit Job Pilot</button></span>
-        <span class="foot">Scheduled runs still happen after you quit. Open Job Pilot again from its desktop shortcut.</span>`)}
+        <span class="foot">Scheduled runs still happen after you quit. Open Job Pilot again from its desktop shortcut. While it's closed, your phone can't reach it.</span>`)}
     </div>`;
 }
 

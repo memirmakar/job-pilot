@@ -12,10 +12,11 @@ import { scheduleHtml, SCHEDULE_ACTIONS } from "./schedule.js";
 import { notificationsHtml, NOTIFY_ACTIONS } from "./notifications.js";
 import { privacyHtml, PRIVACY_ACTIONS } from "./privacy.js";
 import { usageHtml, USAGE_ACTIONS } from "./usage.js";
+import { remoteHtml, REMOTE_ACTIONS } from "./remote.js";
 
 export const SETTINGS_SECTIONS = [["profiles", "Search profiles", "search"], ["applying", "Applying", "send"], ["never", "Never apply to", "ban"],
-  ["schedule", "Schedule", "clock"], ["notifications", "Notifications", "bell"], ["privacy", "Data and privacy", "lock"], ["usage", "Claude usage", "chart"]];
-const HTML = { profiles: profilesHtml, applying: applyingHtml, never: neverHtml, schedule: scheduleHtml, notifications: notificationsHtml, privacy: privacyHtml, usage: usageHtml };
+  ["schedule", "Schedule", "clock"], ["remote", "Phone access", "phone"], ["notifications", "Notifications", "bell"], ["privacy", "Data and privacy", "lock"], ["usage", "Claude usage", "chart"]];
+const HTML = { profiles: profilesHtml, applying: applyingHtml, never: neverHtml, schedule: scheduleHtml, remote: remoteHtml, notifications: notificationsHtml, privacy: privacyHtml, usage: usageHtml };
 
 export const settings = () => S.STATE.settings;
 export const profile = () => S.STATE.profile || {};
@@ -26,8 +27,9 @@ export async function saveSettings(patch, msg = "Saved. It applies from the next
   S.STATE.settings = r.settings;
   S.META = await api.getMeta(); // Jobs and Insights read the target, cutoff and limits from here
   if (r.schedule && String(r.schedule).startsWith("failed")) toast(`Saved, but Windows couldn't update the scheduled task: ${r.schedule.slice(8, 200)}`, 9000);
+  else if (r.remote && String(r.remote).startsWith("failed")) toast(`Saved, but Windows couldn't set up phone access: ${r.remote.slice(8, 200)}`, 9000);
   else toast(msg);
-  if (r.schedule) await loadState();
+  if (r.schedule || r.remote) await loadState();
   app.render();
 }
 export async function saveProfile(patch, msg = "Saved. It applies from the next run.") {
@@ -75,7 +77,7 @@ export const SET_ACTIONS = {
     const on = el.getAttribute("aria-checked") !== "true";
     await saveSettings(sub ? { [k]: { ...(settings()[k] || {}), [sub]: on } } : { [k]: on }, el.dataset.msg || "Saved.");
   },
-  ...PROFILE_ACTIONS, ...APPLYING_ACTIONS, ...NEVER_ACTIONS, ...SCHEDULE_ACTIONS, ...NOTIFY_ACTIONS, ...PRIVACY_ACTIONS, ...USAGE_ACTIONS,
+  ...PROFILE_ACTIONS, ...APPLYING_ACTIONS, ...NEVER_ACTIONS, ...SCHEDULE_ACTIONS, ...NOTIFY_ACTIONS, ...PRIVACY_ACTIONS, ...USAGE_ACTIONS, ...REMOTE_ACTIONS,
 };
 
 // Fields that save on change: data-set (settings; data-type num | lines | str) and data-pset (profile)

@@ -7,8 +7,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
 - `applied_sync.mjs` (89) Once per run: read LinkedIn's job tracker (Applied and Interview tabs) without clicking anything, and add what
   exports: TRACK:11 readTracker:18 changesFor:39 trackerReport:53 syncApplied:69
 - `apply.mjs` (72) Command-line entry point. The app and the scheduled task call these; you normally don't need to.
-- `config.mjs` (102) Configuration = built-in defaults + data/settings.json (app settings) + data/profile.json (the user's onboarding answers).
-  exports: DIR:8 DATA:9 DEFAULT_SETTINGS:13 APPLY_MODES:45 loadSettings:49 loadProfile:51 isOnboarded:52 saveSettings:54 saveProfile:60 loadConfig:67
+- `config.mjs` (103) Configuration = built-in defaults + data/settings.json (app settings) + data/profile.json (the user's onboarding answers).
+  exports: DIR:8 DATA:9 DEFAULT_SETTINGS:13 APPLY_MODES:46 loadSettings:50 loadProfile:52 isOnboarded:53 saveSettings:55 saveProfile:61 loadConfig:68
 - `easy_apply.mjs` (153) The Easy Apply form: upload the chosen resume, fill each step, then submit, hold for your OK, or stop (dry run).
   exports: chosenPath:13 sendApproved:50 sendQueue:66 easyApply:83
 - `linkedin.mjs` (178) Everything that touches LinkedIn in the browser: search, job pages, the Easy Apply form, availability checks.
@@ -104,11 +104,11 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: retailor:17
 - `reupload.mjs` (137) Uploads that wait for the user's OK: files are staged in data/staging/<token>/ until "Add original" or "Use this version".
   exports: loadPending:16 stage:20 discard:33 readStagedOriginal:36 addOriginal:45 reuploadTarget:65 checkStaged:75 useStaged:100
-- `server.mjs` (238) The Job Pilot app: a local web server (http://127.0.0.1:4510) for onboarding, settings, running and reviewing everything.
-  routes: GET /:106 GET /api/state:107 GET /api/applications:115 GET /api/log:116 GET /api/meta:117 GET /api/market:118 GET /api/github:125 GET /api/library:130 GET /api/runs:131 GET /pdf:134 POST /api/resumes:145 POST /api/resumes/delete:157 POST /api/run:164 POST /api/run/stop:170 POST /api/task:175 POST /api/login/linkedin:181 POST /api/login/claude:182 POST /api/archive:191 GET /api/conversation:202 POST /api/ask:206 POST /api/quit:214
-- `settings_routes.mjs` (124) Settings and onboarding routes, merged into server.mjs's route table: settings/profile saving, the Windows scheduled task,
-  exports: applySchedule:22 scheduleInfo:37 onboardingProgress:45 settingsRoutes:57
-  routes: POST /api/profile:59 POST /api/settings:60 GET /api/settings/never:69 GET /api/usage:70 POST /api/notify/test:71 POST /api/onboarding/plan:74 POST /api/onboarding/progress:81 POST /api/onboarding/save:82 POST /api/github/check:93 GET /api/export:110 POST /api/data/delete:115
+- `server.mjs` (240) The Job Pilot app: a local web server (http://127.0.0.1:4510) for onboarding, settings, running and reviewing everything.
+  routes: GET /:107 GET /api/state:108 GET /api/applications:116 GET /api/log:117 GET /api/meta:118 GET /api/market:119 GET /api/github:126 GET /api/library:131 GET /api/runs:132 GET /pdf:135 POST /api/resumes:146 POST /api/resumes/delete:158 POST /api/run:165 POST /api/run/stop:171 POST /api/task:176 POST /api/login/linkedin:182 POST /api/login/claude:183 POST /api/archive:192 GET /api/conversation:203 POST /api/ask:207 POST /api/quit:215
+- `settings_routes.mjs` (128) Settings and onboarding routes, merged into server.mjs's route table: settings/profile saving, the Windows scheduled task,
+  exports: applySchedule:23 scheduleInfo:38 onboardingProgress:46 settingsRoutes:58
+  routes: POST /api/profile:60 POST /api/settings:61 GET /api/settings/never:72 GET /api/usage:73 POST /api/notify/test:74 POST /api/onboarding/plan:77 POST /api/onboarding/progress:84 POST /api/onboarding/save:85 POST /api/github/check:96 GET /api/export:113 POST /api/data/delete:118
 - `status_routes.mjs` (25) /api routes for job statuses: marking what happened after Applied, and Waiting for your OK (approve, skip, send now).
   exports: statusRoutes:6
   routes: POST /api/status:13 POST /api/approve:15 POST /api/skip:16 POST /api/send:18
@@ -135,7 +135,7 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: S:4 app:26 isBusy:28 loadState:30 loadData:36
 - `ui/js/theme.js` (21) Theme: follows the system (prefers-color-scheme) until the user flips the switch; "Match system" clears the choice.
   exports: getChoice:6 isDark:7 applyTheme:9 setChoice:14 watchSystem:18
-- `ui/js/util.js` (71) Small helpers shared by every screen: escaping, text formatting, dates, toast.
+- `ui/js/util.js` (72) Small helpers shared by every screen: escaping, text formatting, dates, toast.
   exports: $:2 esc:3 md:5 fmtDate:6 ago:7 rows:13 lines:14 pdfUrl:15 rich:19 toast:29 icon:35
 
 ## UI: shared components
@@ -149,6 +149,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: readFiles:2 bindDrop:9
 - `ui/js/components/list-row.js` (15) List row (jp-row) inside a grouped list (jp-list). Rows are real buttons; the selected one gets aria-current.
   exports: listRow:5 list:14
+- `ui/js/components/loading.js` (33) Loading state: a calm skeleton of the screen's layout, a gentle message if it takes a while, and an error with Try again.
+  exports: loadingHtml:19 loadFailedHtml:25
 - `ui/js/components/score-ring.js` (13) Score ring (jp-ring): fill = score/100; success at or above target, serious below the cutoff. The number is always shown.
   exports: scoreRing:5
 - `ui/js/components/sheet.js` (48) Sheet: a slide-over panel above a scrim (radius-xl, shadow-float). One sheet at a time.
@@ -253,8 +255,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: openUpload:94
 - `ui/js/screens/settings/applying.js` (72) Settings > Applying (boards Settings-Applying, Settings-Review): the four apply modes in plain words with what each would
   exports: applyingHtml:29 APPLYING_ACTIONS:63
-- `ui/js/screens/settings/index.js` (100) Settings screen (canvas boards Settings, Settings-*): a section list on the left, one section on the right.
-  exports: SETTINGS_SECTIONS:16 settings:20 profile:21 saveSettings:24 saveProfile:33 renderSettings:58 SET_ACTIONS:70 bindSettings:87
+- `ui/js/screens/settings/index.js` (102) Settings screen (canvas boards Settings, Settings-*): a section list on the left, one section on the right.
+  exports: SETTINGS_SECTIONS:17 settings:21 profile:22 saveSettings:25 saveProfile:35 renderSettings:60 SET_ACTIONS:72 bindSettings:89
 - `ui/js/screens/settings/never.js` (59) Settings > Never apply to (board Settings-Never): companies (profile.companyExclude) and title words (profile.titleExclude),
   exports: neverHtml:29 NEVER_ACTIONS:45
 - `ui/js/screens/settings/notifications.js` (31) Settings > Notifications (board Settings-Notifications): which Windows toasts the run sends (settings.notify, read by

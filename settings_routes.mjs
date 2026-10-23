@@ -1,9 +1,10 @@
 // Settings and onboarding routes, merged into server.mjs's route table: settings/profile saving, the Windows scheduled task,
-// onboarding (plan, progress, finish), GitHub check, test notification, never-apply counts, Claude usage, export and delete.
+// phone access on/off, onboarding (plan, progress, finish), GitHub check, test notification, never-apply counts, Claude usage, export and delete.
 import fs from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { DIR, DATA, loadSettings, loadProfile, saveSettings, saveProfile } from "./config.mjs";
+import { applyRemote } from "./remote_access.mjs";
 
 const TASK_NAME = "Job Pilot daily run";
 const PROGRESS = path.join(DATA, "onboarding.json");
@@ -64,7 +65,9 @@ export function settingsRoutes({ body, json, send, startTask, running }) {
       if (SCHEDULE_KEYS.some((k) => JSON.stringify(s[k]) !== JSON.stringify(before[k])) || reapplySchedule) {
         try { schedule = await applySchedule(s); } catch (e) { schedule = `failed: ${e.message}`; }
       }
-      json(res, { settings: s, schedule });
+      let remote = null; // phone access: startup shortcut and keeping the PC awake (remote_access.mjs)
+      if (!!s.remoteAccess !== !!before.remoteAccess) { try { remote = await applyRemote(!!s.remoteAccess); } catch (e) { remote = `failed: ${e.message}`; } }
+      json(res, { settings: s, schedule, remote });
     },
     "GET /api/settings/never": (req, res) => json(res, neverCounts()),
     "GET /api/usage": async (req, res) => json(res, (await fresh("usage.mjs")).usageReport()),
@@ -117,6 +120,7 @@ export function settingsRoutes({ body, json, send, startTask, running }) {
       if (running()) return json(res, { error: "A run or task is working. Stop it first, then delete." }, 409);
       const r = (await fresh("data_tools.mjs")).deleteAll();
       await unschedule();
+      await applyRemote(false).catch(() => {});
       json(res, r);
     },
   };
