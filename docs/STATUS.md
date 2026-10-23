@@ -11,7 +11,7 @@ Read this at the start of every task. Update it at the end: keep it short, repla
 
 ## Active plans (multi-chat features; start a chat with "Continue docs/plans/<plan>.md")
 - `docs/plans/edge-launch.md`: clear errors when the browser can't start. Next: stage 1, find the real errors.
-- `docs/plans/remote-access.md`: use the app from the phone over Tailscale; the app stays on this PC. Next: stage 1, setup steps + check the app behind `tailscale serve`.
+- `docs/plans/remote-access.md`: use the app from the phone over Tailscale; the app stays on this PC. Next: stage 2, passcode for phone access (ask the user first). The user still has to set up Tailscale (README).
 
 ## Known issues
 - **Daily run isn't installed in Windows**: settings say on at 16:00, but no scheduled task exists ("Not scheduled" in the top bar). The user fixes it from Settings → Schedule.

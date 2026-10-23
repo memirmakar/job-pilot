@@ -18,12 +18,12 @@ screen comfortably on a small screen. The app keeps running on this Windows PC. 
   Research is summarized in the 2026-10-23 chat: Hermes Agent was rejected because its gateway itself relies on a Windows scheduled task.
 
 ## Stages
-- [ ] 1. Reach the app over Tailscale **Next**: write the user's setup steps in README.md (a "Use it from your phone" section).
+- [x] 1. Reach the app over Tailscale (done 2026-10-23; the user still has to try it on the phone): write the user's setup steps in README.md (a "Use it from your phone" section).
   The steps: install Tailscale on the PC and phone with one account, turn on HTTPS certificates in the admin console, run `tailscale serve --bg 4510`.
   The user does these steps; Claude never creates accounts or signs in. Then check the app works behind the proxy.
   `server.mjs:223` builds URLs from the Host header; check file uploads, downloads, long-running run output and the Claude login button.
   Files: README.md, server.mjs. Done means: the user opens `https://<pc-name>.<tailnet>.ts.net` on the phone and every screen loads.
-- [ ] 2. Passcode for remote requests: requests carrying Tailscale Serve's `Tailscale-User-Login` header, or a Host that isn't 127.0.0.1, must have a session cookie
+- [ ] 2. Passcode for remote requests **Next** (first ask the user the stage-2 decision): requests carrying Tailscale Serve's `Tailscale-User-Login` header, or a Host that isn't 127.0.0.1, must have a session cookie
   (HttpOnly, Secure, SameSite=Strict). The cookie comes from a passcode screen. The passcode is stored hashed with `crypto.scrypt` in data/ and is set and changed in Settings.
   Requests that change something also need a matching Origin. Use a new module (e.g. `remote_auth.mjs`); keep server.mjs small.
   Done means: the phone without a cookie gets only the passcode screen, the API answers 401, and the PC is unchanged.
@@ -40,9 +40,12 @@ screen comfortably on a small screen. The app keeps running on this Windows PC. 
   When a request comes from the phone, show "Do this at your PC" instead. Done means: no button on the phone silently does something only visible on the PC.
 
 ## Handover
-Plan written; no code changed yet. Facts found: the server listens on 127.0.0.1 only and has no Host or Origin checks and no login.
-The UI uses relative URLs only, so it should work behind `tailscale serve` unchanged. Runs open a visible Edge window on the PC.
-The PC must be on, awake and logged in for the phone to reach the app.
+Stage 1 done: README.md has "Use it from your phone" (Tailscale setup, `tailscale serve --bg 4510`, a warning that there is no passcode yet, never use funnel).
+No app code needed changing. Tested with a local proxy that sends a ts.net Host and Tailscale-User-Login headers (`tailscale serve` is not installed here).
+All 8 screens loaded, there were no failed requests or console errors, and inline and download PDFs worked. It runs in a secure context, so Copy works over HTTPS.
+Not tested: uploads, to keep real data unchanged (test them on a JP_TEST_COPY), and the real phone over mobile data (the user does this).
+Stage 2 traps: the server has no Host or Origin checks today; `tailscale serve` sets the `Tailscale-User-Login` header, which local processes could fake.
+That is fine, because the PC itself is trusted.
 
 ## Next prompt
     Continue docs/plans/remote-access.md

@@ -37,6 +37,22 @@ When something goes wrong, Claude can diagnose it and fix settings or the app's 
 Every file is backed up first. Any change that breaks the app is undone automatically, and you can undo any fix from the **Doctor** page.
 It runs by itself at most once a day per problem. You can also ask it from the Doctor page.
 
+## Use it from your phone
+Job Pilot stays on this PC. Tailscale, a free private network for your own devices, lets your phone reach it from anywhere, even on mobile data.
+Nothing is opened to the public internet.
+
+1. Install Tailscale on this PC (tailscale.com/download) and sign in.
+2. Install the Tailscale app on your phone and sign in with **the same account**. Turn it on.
+3. In the Tailscale admin console (login.tailscale.com/admin), open **DNS**. Make sure **MagicDNS** is on, then turn on **HTTPS Certificates**.
+4. On this PC, open a terminal and run `tailscale serve --bg 4510`. It prints an address like `https://your-pc.tailXXXX.ts.net`. It keeps working after a restart.
+5. Open that address on your phone and bookmark it.
+
+Good to know:
+- **This PC must be on, awake and running Job Pilot** for the phone to reach it.
+- **There is no passcode yet**, so every device signed in to your Tailscale account can use Job Pilot, including sending applications. Only add your own devices.
+- **Never use `tailscale funnel`.** It puts Job Pilot on the public internet.
+- To turn phone access off, run `tailscale serve reset`.
+
 ## Where things are
 | | |
 |---|---|
