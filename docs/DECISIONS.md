@@ -32,3 +32,4 @@ Rules the app follows and why. Change one only when the user asks; then update t
 15. **Small modules.** Files stay under ~300 lines; new behavior goes in a new module, not in `pipeline.mjs`, `llm.mjs` or `linkedin.mjs`.
 16. **The UI follows the Job Pilot design system** (Catppuccin Mocha/Latte, Mauve the only accent, Apple-like restraint). Rules in `ui/CLAUDE.md`.
 17. **The LinkedIn browser is Edge** with its own persistent profile (`browser_profile/`); Playwright's bundled Chromium is only a fallback and isn't installed.
+18. **Remote access is Tailscale only.** The server listens on 127.0.0.1; `tailscale serve` makes it reachable from the user's own devices. Never Tailscale Funnel or port forwarding.
