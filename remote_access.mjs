@@ -71,5 +71,10 @@ export async function applyRemote(on) {
 export const fromPhone = (req) => !!req.headers["tailscale-user-login"] || !/^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i.test(req.headers.host || "");
 // Actions that open a window on this PC: useless from the phone, so the server refuses them there
 export const PC_ONLY = new Set(["POST /api/login/linkedin", "POST /api/login/claude"]);
-// At server start: keep awake again if phone access is on
-export function startRemote() { if (loadSettings().remoteAccess) keepAwake(true); }
+// At server start, if phone access is on: keep awake again, and add the startup shortcut if it's missing
+// (e.g. the switch was turned on while an older server was running)
+export function startRemote() {
+  if (!loadSettings().remoteAccess) return;
+  keepAwake(true);
+  if (!fs.existsSync(STARTUP)) startAtLogin(true).catch((e) => console.error(`Phone access: couldn't add the startup shortcut: ${e.message}`));
+}

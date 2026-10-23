@@ -3,6 +3,7 @@
 Newest first, one line per change a user would notice or a later session needs to know. Details live in the commit and in docs/.
 
 ## 2026-10-23
+- Phone access sets itself up when Job Pilot starts (startup shortcut, keep awake) even if the switch was turned on in an older version. The first phone visit can take about a minute while Tailscale gets its certificate.
 - The Job Pilot shortcut now opens the page in front (it used to open behind other windows and seem to do nothing), and says so if the app fails to start.
 - From the phone, LinkedIn and Claude sign-in say "Do this at your PC" instead of opening a window there; the phone-access plan is done.
 - Phone-friendly: long chips wrap, touch screens get larger buttons and switches, and Job Pilot can be added to an Android home screen (manifest + icons).

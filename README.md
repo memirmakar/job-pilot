@@ -52,6 +52,7 @@ Good to know:
 - **This PC must be on and signed in to Windows** for the phone to reach Job Pilot. If you quit Job Pilot, the phone can't reach it until you open it again.
 - **There is no passcode**, so every device signed in to your Tailscale account can use Job Pilot, including sending applications. Only add your own devices.
 - **Never use `tailscale funnel`.** It puts Job Pilot on the public internet.
+- **The very first visit can take about a minute** while Tailscale gets the HTTPS certificate. After that it opens quickly.
 - To turn phone access off, run `tailscale serve reset`.
 
 ## Where things are
