@@ -5,6 +5,9 @@ Read this at the start of every task. Update it at the end: keep it short, repla
 ## Where things stand (2026-10-22)
 - The UI rebuild is complete (stages 0–7, see CHANGELOG.md): every screen is jp- markup built from the design canvas; no legacy code is left.
 - `master` holds everything. Two worktrees under `.claude/worktrees/` (stage 7, stage 5) are fully merged; safe to remove.
+- Phone access is live (2026-10-23): Tailscale address https://job-hunt-host.tail1d623b.ts.net (the PC was renamed in Tailscale after the old name hit Let's Encrypt's 5-a-week limit).
+  The cause was the PC clock running 3 hours behind, now fixed with Windows Set time automatically. If HTTPS on the address times out again, check the clock first.
+  Tailscale's log needs an admin PowerShell (C:ProgramDataTailscaleLogs).
 - The user's real data is in `data/`, `resumes/` and `browser_profile/` (all git-ignored). Apply mode is `analyze_only`.
 
 - Loading states are in (router `load()` shows the skeleton until the first load; Activity and Doctor load their own data with the same skeleton and error). Guidance, Resumes and Settings' lazy lists still show short in-place "Loading…" text.
@@ -13,7 +16,6 @@ Read this at the start of every task. Update it at the end: keep it short, repla
 - `docs/plans/edge-launch.md`: clear errors when the browser can't start. Next: stage 1, find the real errors.
 
 ## Known issues
-- **PC clock is 3 hours behind real UTC** (2026-10-23: shows 18:16 Istanbul time when it is 21:16). Tailscale then discards each new HTTPS certificate as "not valid yet" and fetches another. That used up Let's Encrypt's 5-a-week limit for laptop-hokolbsj (blocked until 2026-10-25), so the PC was renamed job-hunt-host. Fix: Windows Set time automatically + the right time zone. Check by comparing the PC's UTC with an HTTPS Date header. Reading Tailscale's log needs an admin PowerShell (C:ProgramDataTailscaleLogs).
 - **Daily run isn't installed in Windows**: settings say on at 16:00, but no scheduled task exists ("Not scheduled" in the top bar). The user fixes it from Settings → Schedule.
 - **Test runs fail when Edge doesn't start** and the error hides why: being fixed in the plan `docs/plans/edge-launch.md`.
 - **Weekly check-in prints raw ISO dates** ("2026-10-04") instead of "Oct 4" (`coach.mjs` / `weekFacts`).
