@@ -1,0 +1,17 @@
+/* Phones and touch screens (docs/plans/remote-access.md stage 4). Loaded last, so it adjusts the other files.
+   Long chips wrap instead of running off the screen; touch screens get larger tap targets. Tokens only. */
+.chip { max-width: 100%; }
+
+@media (max-width: 760px) {
+  .chip { height: auto; min-height: 30px; padding-top: 4px; padding-bottom: 4px; line-height: 18px; white-space: normal; text-align: left; }
+}
+
+/* Finger-sized controls on touch screens only; mouse users keep the compact desktop sizes */
+@media (pointer: coarse) {
+  .jp-btn, .jp-seg__item, .navbtn, .menu-row { min-height: 40px; }
+  .jp-btn--sm, .chip { min-height: 36px; }
+  .switch { width: 46px; height: 28px; }
+  .switch::after { width: 22px; height: 22px; }
+  .switch[aria-checked="true"]::after { left: 20px; }
+  .todo-check { width: 24px; height: 24px; }
+}

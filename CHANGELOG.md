@@ -3,6 +3,7 @@
 Newest first, one line per change a user would notice or a later session needs to know. Details live in the commit and in docs/.
 
 ## 2026-10-23
+- Phone-friendly: long chips wrap, touch screens get larger buttons and switches, and Job Pilot can be added to an Android home screen (manifest + icons).
 - Settings > Phone access: Job Pilot starts at Windows sign-in, keeps the PC awake while it runs, and shows the Tailscale address for the phone. No passcode, by the user's choice.
 - README: "Use it from your phone" explains Tailscale setup; the app works behind `tailscale serve` without code changes.
 - Plan for using the app from the phone (Tailscale, app stays on this PC): docs/plans/remote-access.md. Hermes Agent was looked at for scheduling and rejected.

@@ -29,9 +29,9 @@ screen comfortably on a small screen. The app keeps running on this Windows PC. 
 - [x] 3. Always reachable (done 2026-10-23; the startup shortcut comes only from Settings, not install.ps1): the server starts at login (a Startup-folder shortcut to `launch.vbs`, switchable in Settings).
   Settings show "Remote access: on, <address>". Quit warns that the phone will lose access. Apply the stage-3 sleep decision.
   Done means: after a reboot and login, the phone reaches the app without touching the PC.
-- [ ] 4. Phone-friendly UI **Next**: narrow layouts for every screen, touch-sized controls, and a web app manifest plus icons so Android can "Add to Home screen".
+- [x] 4. Phone-friendly UI (done 2026-10-23): narrow layouts for every screen, touch-sized controls, and a web app manifest plus icons so Android can "Add to Home screen".
   Follow ui/CLAUDE.md. Check at 375 px wide in Mocha and Latte.
-- [ ] 5. Things that need the PC: some actions open a window on the PC and are useless from the phone.
+- [ ] 5. Things that need the PC **Next**: some actions open a window on the PC and are useless from the phone.
   - the Claude login window (`server.mjs:187`)
   - LinkedIn sign-in and checks in the visible Edge window (`linkedin.mjs:35`, `headless = false`)
   - onboarding
@@ -39,18 +39,17 @@ screen comfortably on a small screen. The app keeps running on this Windows PC. 
   When a request comes from the phone, show "Do this at your PC" instead. Done means: no button on the phone silently does something only visible on the PC.
 
 ## Handover
-Stage 3 done: `remote_access.mjs` turns phone access on and off (the setting is `remoteAccess`). It adds a Startup-folder shortcut, "Job Pilot (phone access).lnk", that runs `launch.vbs server`.
-`launch.vbs server` is a new mode that starts the server with `--no-open`. remote_access.mjs also keeps the PC awake with a hidden PowerShell process. That process exits by itself when the server is gone.
-It also reads `tailscale status/serve status --json`, cached for 30 s, for `/api/state` `remote`.
-Settings has a new section, Phone access (`ui/js/screens/settings/remote.js`). It shows the switch, a startup and awake check, the Tailscale state with the address and a Copy button, and a no-passcode warning.
-Quit's confirm warns when phone access is on, and Delete my data turns phone access off.
-Tested:
-- on a JP_TEST_COPY: the switch saves both ways, the section renders, and there are no console errors
-- remote_access.mjs with a fake APPDATA: the shortcut points to wscript.exe "…launch.vbs" server, keep-awake starts and stops, and Windows accepts the SetThreadExecutionState call
-
-Not verified: a real reboot. `powercfg /requests` needs admin, and Tailscale isn't installed here, so the "Ready" state with an address wasn't seen.
-Note: /api/state takes about 2 s because of the scheduled-task lookup, so the switch flips only after that.
-Stage 5: a request from the phone carries Tailscale's `Tailscale-User-Login` header; use it to show "Do this at your PC".
+Stage 4 done:
+- Most screens already switched to one column under 760 px, with back buttons.
+- Measured at 375 px (mobile emulation, touch on): only long chips ran off the screen (Insights fields, the resume detail's field chips).
+- `ui/styles/phone.css` (loaded last) lets chips wrap under 760 px. On touch screens only (`pointer: coarse`), it enlarges buttons, segments, chips, switches and to-do checkboxes.
+  Desktop sizes are unchanged (checked: seg 29 px, small button 28 px, chip 30 px).
+- Installable: `ui/manifest.webmanifest`, icons in `ui/icons/` drawn by `node tools/gen-icons.mjs` (the top bar's check mark), theme-color per theme,
+  and MIME types for .webmanifest and .png in `server.mjs`. No service worker, because current Chrome doesn't need one to install. "Add to Home screen" needs HTTPS, which `tailscale serve` gives.
+- Checked: all screens plus the resume detail at 375 px in Mocha and Latte, with no overflow and no console errors.
+  Not checked: a real Android phone, and the install prompt itself.
+- Stage 5 (Tailscale's own facts): a request from the phone has the `Tailscale-User-Login` header.
+  PC-only actions: the Claude login window (`server.mjs` "Claude login"), anything that opens the visible Edge (LinkedIn sign-in, `linkedin.mjs` launch), and onboarding.
 
 ## Next prompt
     Continue docs/plans/remote-access.md

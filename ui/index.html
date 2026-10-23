@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Job Pilot</title>
+<!-- Installable on phones (Add to Home screen): manifest, icon, and the bar color of each theme's --canvas -->
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#11111b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#dce0e8" media="(prefers-color-scheme: light)">
 <script>
   // Theme before first paint (same rule as js/theme.js): the saved choice, else the system setting
   (function () { var c = null; try { c = localStorage.getItem("jp-theme"); } catch (e) {}
@@ -21,6 +27,7 @@
 <link rel="stylesheet" href="/styles/activity.css">
 <link rel="stylesheet" href="/styles/settings.css">
 <link rel="stylesheet" href="/styles/onboarding.css">
+<link rel="stylesheet" href="/styles/phone.css">
 </head>
 <body class="jp-root">
 <header class="jp-bar shell-bar" id="bar">

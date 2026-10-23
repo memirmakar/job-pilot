@@ -46,7 +46,7 @@ Nothing is opened to the public internet.
 3. In the Tailscale admin console (login.tailscale.com/admin), open **DNS**. Make sure **MagicDNS** is on, then turn on **HTTPS Certificates**.
 4. On this PC, open a terminal and run `tailscale serve --bg 4510`. It prints an address like `https://your-pc.tailXXXX.ts.net`. It keeps working after a restart.
 5. In Job Pilot, open **Settings > Phone access** and turn it on. Job Pilot then starts when you sign in to Windows, and this PC stays awake while it runs (the screen can still turn off). The same page shows your phone address.
-6. Open that address on your phone and bookmark it.
+6. Open that address on your phone. In Chrome's menu, choose **Add to Home screen** (or **Install app**) to get a Job Pilot icon that opens like an app.
 
 Good to know:
 - **This PC must be on and signed in to Windows** for the phone to reach Job Pilot. If you quit Job Pilot, the phone can't reach it until you open it again.

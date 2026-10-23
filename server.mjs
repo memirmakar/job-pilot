@@ -95,7 +95,7 @@ const body = (req) => new Promise((resolve, reject) => {
 
 // The UI: plain files under ui/ (native ES modules, no build step)
 const UI_DIR = path.join(DIR, "ui");
-const MIME = { ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".html": "text/html; charset=utf-8", ".svg": "image/svg+xml", ".json": "application/json" };
+const MIME = { ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".html": "text/html; charset=utf-8", ".svg": "image/svg+xml", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png" };
 function uiFile(res, pathname) {
   let file; try { file = path.resolve(UI_DIR, "." + decodeURIComponent(pathname)); } catch { return false; }
   if (!file.startsWith(UI_DIR + path.sep) || !MIME[path.extname(file)] || !fs.existsSync(file)) return false;

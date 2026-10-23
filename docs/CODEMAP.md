@@ -81,6 +81,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: loadAudit:18 refreshAudit:23 auditedMissing:39 segmentOf:62 loadRecords:68 computeStats:83 lastReview:132 runMarketReview:137 reviewDue:153
 - `market_snapshot.mjs` (32) One small snapshot of what the LinkedIn searches returned, saved per run (from Stage 4 on) so the Job market tab can show trends:
   exports: loadSnapshots:10 cityOf:12 saveSnapshot:15
+- `remote_access.mjs` (72) Phone access (docs/plans/remote-access.md): starts the server at Windows sign-in, keeps the PC awake while it runs, and reads the Tailscale address.
+  exports: remoteInfo:60 applyRemote:64 startRemote:71
 - `rescore.mjs` (45) "Re-score on next run": ticking a to-do step done (todo.mjs setDone) flags the jobs it lifts with rec.rescore{ at items }.
   exports: flagged:11 rescoreFlagged:14
 - `resume_instruct.mjs` (90) "Ask Claude to change this resume": Claude applies your instruction to the structured resume, then the result goes through the
@@ -267,6 +269,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: editSheet:16 deleteSheet:47 suggestSheet:77 SHEET_ACTIONS:97
 - `ui/js/screens/settings/profiles.js` (126) Settings > Search profiles (board Settings): one card per profile.targets entry with its own overrides, and the defaults
   exports: WORK:9 targets:10 resumeOptions:17 profilesHtml:77 saveTargets:92 PROFILE_ACTIONS:101 bindProfiles:116
+- `ui/js/screens/settings/remote.js` (46) Settings > Phone access (docs/plans/remote-access.md): the remoteAccess switch, whether Tailscale is ready, and the address to open on the phone.
+  exports: remoteHtml:26 REMOTE_ACTIONS:41
 - `ui/js/screens/settings/schedule.js` (64) Settings > Schedule (board Settings-Schedule): the Windows scheduled task (on/off, time, days; server installs it with
   exports: scheduleHtml:33 SCHEDULE_ACTIONS:55
 - `ui/js/screens/settings/usage-controls.js` (57) Claude usage controls that work on a subscription: pause runs after about N jobs a day (dailyJobs) and optionally M a

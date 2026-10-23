@@ -12,6 +12,8 @@ Click handlers are `data-action` attributes handled in `ui/js/actions.js`. Find 
 - One primary action (`jp-btn--primary`) per region; others are default, tinted or plain.
 - Theme: Mocha (`.jp-mocha`) by default, Latte (`.jp-latte`) on `<html>`; follows the system until the user flips the switch in More.
 - No emoji; icons are the 1.5px line set in `ui/js/util.js` `icon()`. Sentence case. Text written from the user's side; never raw status names.
+- Phones: `styles/phone.css` loads last; touch-only sizes go under `@media (pointer: coarse)` so desktop stays compact. Check new screens at 375 px.
+  App icons: `node tools/gen-icons.mjs` writes `ui/icons/` (manifest: `ui/manifest.webmanifest`).
 - Keep each file under ~300 lines; add a module rather than growing one. New files under `ui/` need no registration.
 - After editing `design/tokens.json`, run `node design/gen-tokens.mjs` (writes `ui/styles/tokens.css`). Never read either file to learn names: use the list below.
 
