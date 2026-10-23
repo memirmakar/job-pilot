@@ -34,7 +34,7 @@ export function enforcePhoto(resume) {
 // ---------- neutral file names ----------
 const ascii = (s) => String(s || "").normalize("NFKD").replace(/\p{M}/gu, "").replace(/ı/g, "i").replace(/İ/g, "I").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "");
 const cap = (w) => w ? w[0].toLocaleUpperCase("en") + w.slice(1).toLocaleLowerCase("en") : "";
-// "{First}_{Last}_CV_{LANG}" -> Emir_Akar_CV_TR.pdf. Only the name and the language: never the job, company, field or a version.
+// "{First}_{Last}_CV_{LANG}" -> Jane_Doe_CV_TR.pdf. Only the name and the language: never the job, company, field or a version.
 export function neutralName(language, pattern = loadSettings().namePattern, fullName = loadProfile()?.name || "Resume") {
   const words = String(fullName).trim().split(/\s+/).filter(Boolean);
   const first = cap(ascii(words[0] || "Resume")), last = cap(ascii(words.slice(1).join(" ")));

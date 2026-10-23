@@ -4,8 +4,8 @@ Read this at the start of every task. Update it at the end: keep it short, repla
 
 ## Where things stand (2026-10-22)
 - The UI rebuild is complete (stages 0–7, see CHANGELOG.md): every screen is jp- markup built from the design canvas; no legacy code is left.
-- `master` holds everything. Two worktrees under `.claude/worktrees/` (stage 7, stage 5) are fully merged; safe to remove.
-- Phone access is live (2026-10-23): Tailscale address https://job-hunt-host.tail1d623b.ts.net (the PC was renamed in Tailscale after the old name hit Let's Encrypt's 5-a-week limit).
+- `master` holds everything and is on GitHub (public): https://github.com/memirmakar/job-pilot. README screenshots are in `docs/screenshots/` (sample names; personal data swapped out before capture). Two worktrees under `.claude/worktrees/` (stage 7, stage 5) are fully merged; safe to remove.
+- Phone access is live (2026-10-23): Tailscale address (see `tailscale status` on the PC) (the PC was renamed in Tailscale after the old name hit Let's Encrypt's 5-a-week limit).
   The cause was the PC clock running 3 hours behind, now fixed with Windows Set time automatically. If HTTPS on the address times out again, check the clock first.
   Tailscale's log needs an admin PowerShell (C:ProgramDataTailscaleLogs).
 - The user's real data is in `data/`, `resumes/` and `browser_profile/` (all git-ignored). Apply mode is `analyze_only`.

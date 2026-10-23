@@ -3,6 +3,18 @@
 Job Pilot finds jobs that fit you on LinkedIn every day and tailors your resume for each one. It applies where it can and explains every decision in a local app.
 It runs on Windows and uses **your own Claude Code** subscription for all the thinking.
 
+![Jobs screen: each job with its score, status and why Claude picked it](docs/screenshots/jobs.png)
+
+| Guidance | Resumes |
+|---|---|
+| ![Weekly check-in and chat with Claude about your search](docs/screenshots/guidance.png) | ![Your resumes, tailored versions and the jobs that used them](docs/screenshots/resumes.png) |
+| **Insights** | **On your phone** |
+| ![Pipeline from analyzed to interview, and whether scores predict replies](docs/screenshots/insights.png) | <img src="docs/screenshots/phone.png" alt="Job Pilot on a phone" width="220"> |
+
+<sub>Screenshots use sample names and companies.</sub>
+
+**Built with:** Node.js (plain ES modules, no build step), Playwright driving Microsoft Edge, the Claude Code CLI, and a local web UI at `http://127.0.0.1:4510`. Everything stays on your PC.
+
 ## Install (no terminal needed)
 1. Install the **Claude Code CLI** from https://claude.com/claude-code.
 2. Double-click **`Install.cmd`**. It installs Node.js if needed, sets up the app, and creates a **Job Pilot** shortcut on your Desktop and in the Start menu.
