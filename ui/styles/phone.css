@@ -1,4 +1,4 @@
-/* Phones and touch screens (docs/plans/remote-access.md stage 4). Loaded last, so it adjusts the other files.
+/* Phones and touch screens (docs/plans/done/remote-access.md stage 4). Loaded last, so it adjusts the other files.
    Long chips wrap instead of running off the screen; touch screens get larger tap targets. Tokens only. */
 .chip { max-width: 100%; }
 

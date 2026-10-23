@@ -11,7 +11,6 @@ Read this at the start of every task. Update it at the end: keep it short, repla
 
 ## Active plans (multi-chat features; start a chat with "Continue docs/plans/<plan>.md")
 - `docs/plans/edge-launch.md`: clear errors when the browser can't start. Next: stage 1, find the real errors.
-- `docs/plans/remote-access.md`: use the app from the phone over Tailscale; the app stays on this PC. Next: stage 5, show "Do this at your PC" for PC-only actions on the phone. The user still has to set up Tailscale and turn on Settings > Phone access (README).
 
 ## Known issues
 - **Daily run isn't installed in Windows**: settings say on at 16:00, but no scheduled task exists ("Not scheduled" in the top bar). The user fixes it from Settings → Schedule.
@@ -25,6 +24,9 @@ Read this at the start of every task. Update it at the end: keep it short, repla
   "Not reviewed", so no repo reaches a resume until then), add the photo (Resumes > Your resume rules; "Take it from an original" finds it in every PDF original),
   then "Rename files to the new pattern" (11 unsent files) and "Re-tailor unsent resumes" (7, about 28 Claude calls) when they choose.
 - The .docx export has no photo yet (`docx.mjs` writes text only).
+- Phone access is built (plan done, `docs/plans/done/remote-access.md`). The user still has to install Tailscale, run `tailscale serve --bg 4510`, turn on Settings > Phone access,
+  restart Job Pilot once, and try it on the phone (README "Use it from your phone").
 
 ## Open decisions (ask the user)
+- Replace the Windows scheduled task with a timer inside the server? It works best now that Phone access keeps the server running. Hermes Agent was looked at and rejected (its own gateway needs a scheduled task).
 - Photo on English resumes: the rule is unset on the real data ("Ask me"), so English resumes ask once.

@@ -14,14 +14,20 @@ import { GUIDE_ACTIONS, bindGuidance } from "./screens/guidance/index.js";
 import { ACT_ACTIONS } from "./screens/activity/index.js";
 import { DOC_ACTIONS } from "./screens/doctor/index.js";
 
+// On the phone (through Tailscale), actions that open a window on the PC explain that instead of doing it out of sight
+const phone = () => !!S.STATE?.remote?.phone;
+const atPc = (why) => toast(`Do this at your PC. ${why}`, 8000);
+
 const ACTIONS = {
-  run: async () => { await api.startRun({}); toast("Run started. You'll see an Edge window working; leave it open."); await loadState(); },
+  run: async () => { await api.startRun({}); toast(phone() ? "Run started on your PC. Follow it here." : "Run started. You'll see an Edge window working; leave it open."); await loadState(); },
   "dry-run": async () => { await api.startRun({ dryRun: true, limit: 2 }); toast("Test run started on 2 jobs. Nothing will be submitted."); await loadState(); },
   stop: async () => { await api.stopRun(); toast("Stopping the run…"); setTimeout(app.load, 1500); },
   task: async (el) => { await api.startTask(el.dataset.task); toast(`${el.dataset.task} started`); await loadState(); app.render(); },
   recheck: async () => { toast("Checking Claude…"); await loadState(true); app.render(); },
-  "claude-login": async () => { await api.loginClaude(); toast("A Claude window opened: type /login, finish in your browser, close it, then press Check again.", 9000); },
-  "linkedin-login": async () => { await api.loginLinkedin(); toast("An Edge window opened. Sign in to LinkedIn, then close it.", 8000); },
+  "claude-login": async () => { if (phone()) return atPc("Signing in to Claude opens a window on your PC.");
+    await api.loginClaude(); toast("A Claude window opened: type /login, finish in your browser, close it, then press Check again.", 9000); },
+  "linkedin-login": async () => { if (phone()) return atPc("Signing in to LinkedIn opens an Edge window on your PC.");
+    await api.loginLinkedin(); toast("An Edge window opened. Sign in to LinkedIn, then close it.", 8000); },
   archive: async (el) => { await api.setArchived(el.dataset.site, el.dataset.id, !!el.dataset.v); app.load(); },
   "retry-load": () => app.load(),
   quit: async () => { if (!confirm(S.STATE?.settings?.remoteAccess ? "Quit Job Pilot? Your phone can't reach it until Job Pilot is opened again on this PC. The scheduled daily run still happens." : "Quit Job Pilot? The scheduled daily run still happens.")) return; await api.quit(); document.body.innerHTML = `<div class="placeholder"><p class="t-headline">Job Pilot closed. Open it again from the desktop shortcut.</p></div>`; },

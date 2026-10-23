@@ -1,4 +1,4 @@
-// Phone access (docs/plans/remote-access.md): starts the server at Windows sign-in, keeps the PC awake while it runs, and reads the Tailscale address.
+// Phone access (docs/plans/done/remote-access.md): starts the server at Windows sign-in, keeps the PC awake while it runs, and reads the Tailscale address.
 import fs from "node:fs";
 import path from "node:path";
 import { execFile, spawn } from "node:child_process";
@@ -67,5 +67,9 @@ export async function applyRemote(on) {
   tsCache = null;
   return on ? "on" : "off";
 }
+// A request from another device: `tailscale serve` adds Tailscale-User-Login, and only it reaches us without a local Host
+export const fromPhone = (req) => !!req.headers["tailscale-user-login"] || !/^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i.test(req.headers.host || "");
+// Actions that open a window on this PC: useless from the phone, so the server refuses them there
+export const PC_ONLY = new Set(["POST /api/login/linkedin", "POST /api/login/claude"]);
 // At server start: keep awake again if phone access is on
 export function startRemote() { if (loadSettings().remoteAccess) keepAwake(true); }

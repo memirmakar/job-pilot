@@ -11,7 +11,7 @@ import { insightsRoutes } from "./insights_routes.mjs";
 import { activityRoutes } from "./activity_routes.mjs";
 import { coachRoutes } from "./coach_routes.mjs";
 import { settingsRoutes, scheduleInfo, onboardingProgress } from "./settings_routes.mjs";
-import { remoteInfo, startRemote } from "./remote_access.mjs";
+import { remoteInfo, startRemote, fromPhone, PC_ONLY } from "./remote_access.mjs";
 import { stage } from "./reupload.mjs";
 import { archiveOriginal } from "./resumes.mjs";
 
@@ -110,7 +110,7 @@ const routes = {
     json(res, {
       onboarded: isOnboarded(), settings: loadSettings(), defaults: DEFAULT_SETTINGS, profile: loadProfile(), onboarding: onboardingProgress(), dir: DIR,
       claude: claudeCache, linkedinProfile: fs.existsSync(path.join(DIR, "browser_profile")),
-      schedule: await scheduleInfo(), remote: await remoteInfo(), run: runState(), tasks: taskStatus(), resumes: resumes(),
+      schedule: await scheduleInfo(), remote: { ...(await remoteInfo()), phone: fromPhone(req) }, run: runState(), tasks: taskStatus(), resumes: resumes(),
     });
   },
   "GET /api/applications": (req, res) => json(res, records()),
@@ -224,6 +224,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const h = routes[`${req.method} ${url.pathname}`];
   if (!h) return (req.method === "GET" && uiFile(res, url.pathname)) || send(res, 404, "text/plain", "Not found");
+  if (PC_ONLY.has(`${req.method} ${url.pathname}`) && fromPhone(req)) return json(res, { error: "Do this at your PC: it opens a window there." }, 409);
   try { await h(req, res, url); } catch (e) { json(res, { error: e.message }, 500); }
 });
 server.on("error", (e) => {

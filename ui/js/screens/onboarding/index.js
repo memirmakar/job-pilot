@@ -5,6 +5,7 @@ import { S, app, loadState } from "../../state.js";
 import * as api from "../../api.js";
 import { $, esc, icon, rows, toast } from "../../util.js";
 import { openUpload } from "../resumes/upload.js";
+import { callout } from "../../components/card.js";
 import { claudeStep, resumesStep, githubStep, goalsStep, planStep, linkedinStep, scheduleStep } from "./steps.js";
 
 // [id, label, sub (to do), title, lead, foot]
@@ -61,7 +62,7 @@ export function renderOnboarding() {
       <p class="foot ob-nav__foot">About 10 minutes. You can change everything later in Settings and Resumes.</p></nav>
     <div class="ob-main"><div class="ob-head"><p class="cap">Step <span class="jp-num">${n}</span> of <span class="jp-num">${STEPS.length}</span></p>
         <h2 id="ob-title" class="t-title1">${title}</h2><p class="meta">${lead}</p></div>
-      <div class="ob-body" id="ob-body">${BODY[k]()}</div>
+      <div class="ob-body" id="ob-body">${S.STATE?.remote?.phone ? callout("Set up Job Pilot at your PC. Some steps open windows there, like signing in to Claude and LinkedIn.", "warning") : ""}${BODY[k]()}</div>
       <div class="ob-foot"><span class="foot ob-foot__note">${k === "schedule" ? `First run ${esc(OB.sched.time)} after you finish, or press Run now` : foot}</span>
         ${OB.step ? `<button class="jp-btn" type="button" data-action="ob-back">Back</button>` : ""}
         <button class="jp-btn jp-btn--primary" type="button" data-action="ob-next"${canNext ? "" : " disabled"}>${cta}</button></div></div>

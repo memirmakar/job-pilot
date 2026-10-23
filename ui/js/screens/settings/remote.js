@@ -1,4 +1,4 @@
-// Settings > Phone access (docs/plans/remote-access.md): the remoteAccess switch, whether Tailscale is ready, and the address to open on the phone.
+// Settings > Phone access (docs/plans/done/remote-access.md): the remoteAccess switch, whether Tailscale is ready, and the address to open on the phone.
 import { S } from "../../state.js";
 import { esc, toast } from "../../util.js";
 import { callout } from "../../components/card.js";

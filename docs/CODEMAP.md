@@ -81,8 +81,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: loadAudit:18 refreshAudit:23 auditedMissing:39 segmentOf:62 loadRecords:68 computeStats:83 lastReview:132 runMarketReview:137 reviewDue:153
 - `market_snapshot.mjs` (32) One small snapshot of what the LinkedIn searches returned, saved per run (from Stage 4 on) so the Job market tab can show trends:
   exports: loadSnapshots:10 cityOf:12 saveSnapshot:15
-- `remote_access.mjs` (72) Phone access (docs/plans/remote-access.md): starts the server at Windows sign-in, keeps the PC awake while it runs, and reads the Tailscale address.
-  exports: remoteInfo:60 applyRemote:64 startRemote:71
+- `remote_access.mjs` (76) Phone access (docs/plans/done/remote-access.md): starts the server at Windows sign-in, keeps the PC awake while it runs, and reads the Tailscale addre
+  exports: remoteInfo:60 applyRemote:64 fromPhone:71 PC_ONLY:73 startRemote:75
 - `rescore.mjs` (45) "Re-score on next run": ticking a to-do step done (todo.mjs setDone) flags the jobs it lifts with rec.rescore{ at items }.
   exports: flagged:11 rescoreFlagged:14
 - `resume_instruct.mjs` (90) "Ask Claude to change this resume": Claude applies your instruction to the structured resume, then the result goes through the
@@ -106,7 +106,7 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: retailor:17
 - `reupload.mjs` (137) Uploads that wait for the user's OK: files are staged in data/staging/<token>/ until "Add original" or "Use this version".
   exports: loadPending:16 stage:20 discard:33 readStagedOriginal:36 addOriginal:45 reuploadTarget:65 checkStaged:75 useStaged:100
-- `server.mjs` (240) The Job Pilot app: a local web server (http://127.0.0.1:4510) for onboarding, settings, running and reviewing everything.
+- `server.mjs` (241) The Job Pilot app: a local web server (http://127.0.0.1:4510) for onboarding, settings, running and reviewing everything.
   routes: GET /:107 GET /api/state:108 GET /api/applications:116 GET /api/log:117 GET /api/meta:118 GET /api/market:119 GET /api/github:126 GET /api/library:131 GET /api/runs:132 GET /pdf:135 POST /api/resumes:146 POST /api/resumes/delete:158 POST /api/run:165 POST /api/run/stop:171 POST /api/task:176 POST /api/login/linkedin:182 POST /api/login/claude:183 POST /api/archive:192 GET /api/conversation:203 POST /api/ask:207 POST /api/quit:215
 - `settings_routes.mjs` (128) Settings and onboarding routes, merged into server.mjs's route table: settings/profile saving, the Windows scheduled task,
   exports: applySchedule:23 scheduleInfo:38 onboardingProgress:46 settingsRoutes:58
@@ -124,8 +124,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: usageReport:12
 
 ## UI: boot, shell, state
-- `ui/js/actions.js` (86) Every [data-action] button, plus the page-wide click / change / input / tooltip handlers.
-  exports: bindEvents:51
+- `ui/js/actions.js` (92) Every [data-action] button, plus the page-wide click / change / input / tooltip handlers.
+  exports: bindEvents:57
 - `ui/js/api.js` (109) Every call the UI makes to server.mjs. Screens import these instead of calling fetch directly.
   exports: getState:16 getApplications:17 getLog:18 getMeta:19 getMarket:20 getInsights:21 getGithub:22 getLibrary:23 getDoctor:24 getRuns:25 getActivity:26 getChecks:27 getResumes:28 getConversation:29 askAboutJob:32 getCoach:35 getCoachConv:36 coachNew:37 coachSend:38 coachCancel:39 coachRename:40 coachDelete:41 coachContext:42 coachCheckin:43 coachResumeEdit:44 coachInterview:45 addTodoItems:46 startRun:49 stopRun:50 startTask:51 askDoctor:52 undoDoctor:53 checkLinkedin:54 uploadResumes:57 removeResume:58 stageResumes:60 readOriginal:61 readExisting:62 addOriginal:63 discardUpload:64 setResumeMeta:65 checkReupload:66 useReupload:67 saveAnswers:68 docxUrl:69 instructResume:70 saveResumeRules:71 addResumeRule:72 savePhoto:73 removePhoto:74 photosFrom:75 photoUrl:76 setProject:77 suggestProjects:78 renameResume:79 deleteResume:80 undoDelete:81 renameAllResumes:82 saveProfile:83 saveSettings:84 setTodo:85 addTodo:86 setArchived:87 setJobStatus:89 approveJob:90 skipJob:91 sendNow:92 getUsage:95 getNever:96 testNotify:97 exportUrl:98 deleteData:99 planSearch:102 saveProgress:103 checkGithub:104 finishOnboarding:105 loginLinkedin:106 loginClaude:107 quit:108
 - `ui/js/main.js` (30) Boot: theme, shell, events, first load, then the refresh loop.
@@ -223,8 +223,8 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: heldAnswers:14 openReview:33 REVIEW_ACTIONS:80
 - `ui/js/screens/jobs/track.js` (74) What happened to a job and to the runs, in words: the status to show (statusHistory + the no-reply rule),
   exports: noReplyDays:10 lastActivity:12 interviewDay:15 shown:18 shownBucket:28 waitingCount:29 timeline:33 closedAfterApply:53 runProblem:57
-- `ui/js/screens/onboarding/index.js` (150) Onboarding (boards Onboarding, Onboarding-Profile): a dialog over the empty app, shown until onboarded. Seven steps in
-  exports: OB:24 resetOnboarding:26 renderOnboarding:49 onboardingTick:72 OB_ACTIONS:109
+- `ui/js/screens/onboarding/index.js` (151) Onboarding (boards Onboarding, Onboarding-Profile): a dialog over the empty app, shown until onboarded. Seven steps in
+  exports: OB:25 resetOnboarding:27 renderOnboarding:50 onboardingTick:73 OB_ACTIONS:110
 - `ui/js/screens/onboarding/steps.js` (106) Onboarding step bodies (boards Onboarding, Onboarding-Profile). Each returns HTML; index.js reads the inputs back.
   exports: claudeStep:20 resumesStep:35 githubStep:48 goalsStep:56 planStep:66 linkedinStep:84 scheduleStep:95
 - `ui/js/screens/resumes/answers.js` (63) Standard answers (canvas board Resumes-Answers): what's missing and the jobs it holds up, then the filled-in answers.
@@ -269,7 +269,7 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
   exports: editSheet:16 deleteSheet:47 suggestSheet:77 SHEET_ACTIONS:97
 - `ui/js/screens/settings/profiles.js` (126) Settings > Search profiles (board Settings): one card per profile.targets entry with its own overrides, and the defaults
   exports: WORK:9 targets:10 resumeOptions:17 profilesHtml:77 saveTargets:92 PROFILE_ACTIONS:101 bindProfiles:116
-- `ui/js/screens/settings/remote.js` (46) Settings > Phone access (docs/plans/remote-access.md): the remoteAccess switch, whether Tailscale is ready, and the address to open on the phone.
+- `ui/js/screens/settings/remote.js` (46) Settings > Phone access (docs/plans/done/remote-access.md): the remoteAccess switch, whether Tailscale is ready, and the address to open on the phone.
   exports: remoteHtml:26 REMOTE_ACTIONS:41
 - `ui/js/screens/settings/schedule.js` (64) Settings > Schedule (board Settings-Schedule): the Windows scheduled task (on/off, time, days; server installs it with
   exports: scheduleHtml:33 SCHEDULE_ACTIONS:55
@@ -281,3 +281,4 @@ instead of reading whole files. Regenerate after adding, removing or renaming fi
 ## Tools
 - `design/gen-tokens.mjs` (55) Generates ui/styles/tokens.css from design/tokens.json (the design system's tokens).
 - `tools/codemap.mjs` (52) Generates docs/CODEMAP.md: one line per source file with its purpose (the file's first comment line), size,
+- `tools/gen-icons.mjs` (55) Draws the app icon (the top bar's mark: a Mauve rounded square with a check) as PNGs for the web app manifest. Node built-ins only.

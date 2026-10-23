@@ -1,5 +1,5 @@
 # Remote access from the phone
-Status: Active      Started: 2026-10-23
+Status: Done      Started: 2026-10-23      Finished: 2026-10-23
 
 ## Goal
 The user wants to open Job Pilot from their Android phone (and other devices) when away from home, not only on this PC.
@@ -31,7 +31,7 @@ screen comfortably on a small screen. The app keeps running on this Windows PC. 
   Done means: after a reboot and login, the phone reaches the app without touching the PC.
 - [x] 4. Phone-friendly UI (done 2026-10-23): narrow layouts for every screen, touch-sized controls, and a web app manifest plus icons so Android can "Add to Home screen".
   Follow ui/CLAUDE.md. Check at 375 px wide in Mocha and Latte.
-- [ ] 5. Things that need the PC **Next**: some actions open a window on the PC and are useless from the phone.
+- [x] 5. Things that need the PC (done 2026-10-23): some actions open a window on the PC and are useless from the phone.
   - the Claude login window (`server.mjs:187`)
   - LinkedIn sign-in and checks in the visible Edge window (`linkedin.mjs:35`, `headless = false`)
   - onboarding
@@ -39,17 +39,17 @@ screen comfortably on a small screen. The app keeps running on this Windows PC. 
   When a request comes from the phone, show "Do this at your PC" instead. Done means: no button on the phone silently does something only visible on the PC.
 
 ## Handover
-Stage 4 done:
-- Most screens already switched to one column under 760 px, with back buttons.
-- Measured at 375 px (mobile emulation, touch on): only long chips ran off the screen (Insights fields, the resume detail's field chips).
-- `ui/styles/phone.css` (loaded last) lets chips wrap under 760 px. On touch screens only (`pointer: coarse`), it enlarges buttons, segments, chips, switches and to-do checkboxes.
-  Desktop sizes are unchanged (checked: seg 29 px, small button 28 px, chip 30 px).
-- Installable: `ui/manifest.webmanifest`, icons in `ui/icons/` drawn by `node tools/gen-icons.mjs` (the top bar's check mark), theme-color per theme,
-  and MIME types for .webmanifest and .png in `server.mjs`. No service worker, because current Chrome doesn't need one to install. "Add to Home screen" needs HTTPS, which `tailscale serve` gives.
-- Checked: all screens plus the resume detail at 375 px in Mocha and Latte, with no overflow and no console errors.
-  Not checked: a real Android phone, and the install prompt itself.
-- Stage 5 (Tailscale's own facts): a request from the phone has the `Tailscale-User-Login` header.
-  PC-only actions: the Claude login window (`server.mjs` "Claude login"), anything that opens the visible Edge (LinkedIn sign-in, `linkedin.mjs` launch), and onboarding.
+All stages done (2 skipped by decision).
+- Stage 5: `remote_access.mjs` `fromPhone(req)` is true when a request has Tailscale's `Tailscale-User-Login` header or a non-local Host.
+  `PC_ONLY` (LinkedIn and Claude sign-in) is refused for such requests in `server.mjs`'s dispatcher with 409 "Do this at your PC".
+  `/api/state` `remote.phone` tells the UI. In the UI:
+  - `actions.js` shows "Do this at your PC…" for both login actions and makes no call
+  - the Run toast says the run happens on the PC
+  - onboarding shows a callout
+- Checked through the proxy on a test copy: phone true through the proxy and false locally, both logins 409 through the proxy, and the UI toast with no request sent.
+  Not checked: the onboarding callout (needs a fresh, not onboarded copy).
+- What only the user can check: Tailscale on the real phone over mobile data, Add to Home screen, and a reboot with Phone access on.
+- Follow-up outside this plan: replacing the Windows scheduled task with a timer in the server (Hermes was rejected). It's in docs/STATUS.md under open decisions.
 
 ## Next prompt
-    Continue docs/plans/remote-access.md
+    None: the plan is done.
