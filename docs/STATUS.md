@@ -13,6 +13,7 @@ Read this at the start of every task. Update it at the end: keep it short, repla
 - `docs/plans/edge-launch.md`: clear errors when the browser can't start. Next: stage 1, find the real errors.
 
 ## Known issues
+- **PC clock is 3 hours behind real UTC** (2026-10-23: shows 18:16 Istanbul time when it is 21:16). Tailscale then discards each new HTTPS certificate as "not valid yet" and fetches another. That used up Let's Encrypt's 5-a-week limit for laptop-hokolbsj (blocked until 2026-10-25), so the PC was renamed job-hunt-host. Fix: Windows Set time automatically + the right time zone. Check by comparing the PC's UTC with an HTTPS Date header. Reading Tailscale's log needs an admin PowerShell (C:ProgramDataTailscaleLogs).
 - **Daily run isn't installed in Windows**: settings say on at 16:00, but no scheduled task exists ("Not scheduled" in the top bar). The user fixes it from Settings → Schedule.
 - **Test runs fail when Edge doesn't start** and the error hides why: being fixed in the plan `docs/plans/edge-launch.md`.
 - **Weekly check-in prints raw ISO dates** ("2026-10-04") instead of "Oct 4" (`coach.mjs` / `weekFacts`).
